@@ -27,22 +27,22 @@ namespace CredentialLeakageMonitoring.Services
             {
                 byte[] emailHash = cryptoService.HashEmail(record.Email);
 
-                var existingLeaksForMailaddress = await dbContext.Leaks
+                List<Leak> existingLeaksForMailaddress = await dbContext.Leaks
                     .Where(l => l.EmailHash == emailHash)
                     .ToListAsync()
                     .ConfigureAwait(false);
 
                 log.LogInformation("Found {Count} existing leaks for email {Email}", existingLeaksForMailaddress.Count, record.Email);
 
-                var foundMatchingLeak = false;
+                bool foundMatchingLeak = false;
 
-                foreach (var existingLeak in existingLeaksForMailaddress)
+                foreach (Leak? existingLeak in existingLeaksForMailaddress)
                 {
                     if (foundMatchingLeak)
                     {
                         break;
                     }
-                        
+
                     byte[] passwordHashWithExistingSalt = cryptoService.HashPassword(record.PlaintextPassword, existingLeak.PasswordSalt);
 
                     if (passwordHashWithExistingSalt.SequenceEqual(existingLeak.PasswordHash))
@@ -53,7 +53,7 @@ namespace CredentialLeakageMonitoring.Services
                         foundMatchingLeak = true;
 
                         continue;
-                    }          
+                    }
                 }
 
                 if (foundMatchingLeak)
@@ -65,10 +65,10 @@ namespace CredentialLeakageMonitoring.Services
                 log.LogInformation("No matching leak found for email {Email}. Adding leak as new.", record.Email);
 
                 // Leak is really new
-                var salt = cryptoService.GenerateRandomSalt();
-                var passwordHashWithRandomSalt = cryptoService.HashPassword(record.PlaintextPassword, salt);
+                byte[] salt = cryptoService.GenerateRandomSalt();
+                byte[] passwordHashWithRandomSalt = cryptoService.HashPassword(record.PlaintextPassword, salt);
 
-                var newLeak = new Leak
+                Leak newLeak = new()
                 {
                     Id = Guid.NewGuid(),
                     EmailHash = emailHash,
