@@ -28,9 +28,13 @@ namespace CredentialLeakageMonitoring.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    EmailHash = table.Column<byte[]>(type: "bytea", nullable: false),
-                    ObfuscatedPassword = table.Column<string>(type: "text", nullable: false),
-                    PasswordHash = table.Column<byte[]>(type: "bytea", nullable: false),
+                    EmailHash = table.Column<byte[]>(type: "bytea", maxLength: 64, nullable: false),
+                    EMailAlgorithm = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    ObfuscatedPassword = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    PasswordHash = table.Column<byte[]>(type: "bytea", maxLength: 64, nullable: false),
+                    PasswordSalt = table.Column<byte[]>(type: "bytea", maxLength: 16, nullable: false),
+                    PasswordAlgorithmVersion = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    PasswordAlgorithm = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     Domain = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     FirstSeen = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     LastSeen = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),

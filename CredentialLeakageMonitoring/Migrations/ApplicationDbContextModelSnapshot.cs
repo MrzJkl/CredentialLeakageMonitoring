@@ -51,8 +51,14 @@ namespace CredentialLeakageMonitoring.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<string>("EMailAlgorithm")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
                     b.Property<byte[]>("EmailHash")
                         .IsRequired()
+                        .HasMaxLength(64)
                         .HasColumnType("bytea");
 
                     b.Property<DateTimeOffset>("FirstSeen")
@@ -63,10 +69,27 @@ namespace CredentialLeakageMonitoring.Migrations
 
                     b.Property<string>("ObfuscatedPassword")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("PasswordAlgorithm")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("PasswordAlgorithmVersion")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<byte[]>("PasswordHash")
                         .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("bytea");
+
+                    b.Property<byte[]>("PasswordSalt")
+                        .IsRequired()
+                        .HasMaxLength(16)
                         .HasColumnType("bytea");
 
                     b.HasKey("Id");

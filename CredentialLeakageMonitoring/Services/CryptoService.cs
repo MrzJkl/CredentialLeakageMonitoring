@@ -1,16 +1,55 @@
-﻿using System.Security.Cryptography;
+﻿using Konscious.Security.Cryptography;
+using System.Diagnostics;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace CredentialLeakageMonitoring.Services
 {
-    public class CryptoService
+    public class CryptoService(ILogger<CryptoService> log)
     {
+        private const int SaltLength = 16;
+        public static readonly string AlgorithmForPassword = nameof(Argon2id);
+        public static readonly string AlgorithmForEmail = nameof(SHA3_512);
+        // Argon2 Version 1.3 (v=19) regarding:
+        // https://www.nuget.org/packages/Konscious.Security.Cryptography.Argon2
+        public static string AlgorithmVersionForPassword = "v=19";
+
         public byte[] HashEmail(string email)
         {
+            var sw = Stopwatch.StartNew();
+            email = email.Trim().ToLowerInvariant();
             byte[] inputBytes = Encoding.UTF8.GetBytes(email);
-            return SHA3_512.HashData(inputBytes);
+            var hash = SHA3_512.HashData(inputBytes);
+            sw.Stop();
+            log.LogInformation("HashEmail took {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);
+            return hash;
         }
 
+        public byte[] HashPassword(string password, byte[] salt)
+        {
+            var sw = Stopwatch.StartNew();
+            Argon2id argon2 = new(Encoding.UTF8.GetBytes(password))
+            {
+                Salt = salt,
+                DegreeOfParallelism = 16,
+                Iterations = 2,
+                MemorySize = 1024 * 1024 // 1 GB
+            };
 
+            var hash = argon2.GetBytes(32);
+
+            sw.Stop();
+            log.LogInformation("HashPassword took {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);
+
+            return hash;
+        }
+
+        public byte[] GenerateRandomSalt()
+        {
+            byte[] salt = new byte[SaltLength];
+            using RandomNumberGenerator rng = RandomNumberGenerator.Create();
+            rng.GetBytes(salt);
+            return salt;
+        }
     }
 }

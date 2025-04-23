@@ -9,24 +9,39 @@ namespace CredentialLeakageMonitoring.DatabaseModels
     public class Leak
     {
         [Key]
-        public Guid Id { get; private set; }
+        public Guid Id { get; init; }
 
-        public byte[] EmailHash { get; private set; }
-
-        public string ObfuscatedPassword { get; private set; }
-
-        public byte[] PasswordHash { get; private set; }
+        [MaxLength(64)]
+        public byte[] EmailHash { get; set; }
 
         [MaxLength(255)]
-        public string Domain { get; private set; }
+        public string EMailAlgorithm { get; set; }
 
-        public DateTimeOffset FirstSeen { get; private set; }
+        [MaxLength(255)]
+        public string ObfuscatedPassword { get; set; }
 
-        public DateTimeOffset LastSeen { get; private set; }
+        [MaxLength(64)]
+        public byte[] PasswordHash { get; set; }
+
+        [MaxLength(16)]
+        public byte[] PasswordSalt { get; set; }
+
+        [MaxLength(255)]
+        public string PasswordAlgorithmVersion { get; set; }
+
+        [MaxLength(255)]
+        public string PasswordAlgorithm { get; set; }
+
+        [MaxLength(255)]
+        public string Domain { get; set; }
+
+        public DateTimeOffset FirstSeen { get; set; }
+
+        public DateTimeOffset LastSeen { get; set; }
 
         [ForeignKey(nameof(Customer))]
-        public Guid? CustomerId { get; private set; }
+        public Guid? CustomerId { get; set; }
 
-        public virtual Customer? Customer { get; private set; }
+        public virtual Customer? Customer { get; set; }
     }
 }
