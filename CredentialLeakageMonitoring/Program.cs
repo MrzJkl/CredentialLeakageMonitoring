@@ -1,44 +1,51 @@
-var builder = WebApplication.CreateBuilder(args);
+using CredentialLeakageMonitoring.Database;
+using CredentialLeakageMonitoring.Services;
+using Microsoft.EntityFrameworkCore;
+using Serilog;
+using Serilog.Events;
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .Filter.ByExcluding(e =>
+        e.Level == LogEventLevel.Information &&
+        e.Properties.TryGetValue("SourceContext", out LogEventPropertyValue? c) &&
+        c.Equals(new ScalarValue("Microsoft.EntityFrameworkCore.Database.Command")))
+    .CreateLogger();
 
-var app = builder.Build();
+builder.Host.UseSerilog();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+builder.Services.AddLogging(options =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    options.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Warning); // SQL unterdrücken
+});
+
+string? connectionString = builder.Configuration.GetConnectionString("Postgres");
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(connectionString));
+builder.Services.AddScoped<IngestionService>();
+builder.Services.AddScoped<CryptoService>();
+
+WebApplication app = builder.Build();
+
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
+app.MapPost("/upload", async (IFormFile file, IngestionService ingestionService) =>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+    if (file is null || file.Length == 0)
+        return Results.BadRequest("No file uploaded.");
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
+    await ingestionService.IngestCsvAsync(file.OpenReadStream());
+
+    return Results.Ok();
+}).DisableAntiforgery();
 
 app.Run();
-
-internal record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
