@@ -33,12 +33,12 @@ namespace CredentialLeakageMonitoring.Services
 
         public async Task<List<LeakModel>> SearchForLeaksByCustomerId(Guid customerId)
         {
-            var customer = await dbContext.Customers
+            DatabaseModels.Customer customer = await dbContext.Customers
                 .Include(c => c.AssociatedDomains)
                 .SingleOrDefaultAsync(c => c.Id == customerId)
                 .ConfigureAwait(false) ?? throw new Exception($"Customer with ID {customerId} not found.");
 
-            var domainNames = customer.AssociatedDomains.Select(d => d.DomainName).ToList();
+            List<string> domainNames = customer.AssociatedDomains.Select(d => d.DomainName).ToList();
 
             List<DatabaseModels.Leak> leaks = await dbContext.Leaks
                 .Include(l => l.AssociatedCustomers)
@@ -46,7 +46,7 @@ namespace CredentialLeakageMonitoring.Services
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            foreach (var leak in leaks)
+            foreach (DatabaseModels.Leak leak in leaks)
             {
                 if (!leak.AssociatedCustomers.Any(c => c.Id == customerId))
                 {

@@ -10,7 +10,7 @@ namespace CredentialLeakageMonitoring.Services
 {
     public class IngestionService(ApplicationDbContext dbContext, CryptoService cryptoService, ILogger<IngestionService> log)
     {
-        public async Task<List<Leak>> IngestCsvAsync(Stream csvStream)
+        public async Task IngestCsvAsync(Stream csvStream)
         {
             using StreamReader reader = new(csvStream);
             using CsvReader csv = new(reader, new CsvConfiguration(CultureInfo.InvariantCulture)
@@ -67,12 +67,12 @@ namespace CredentialLeakageMonitoring.Services
                 // Leak is really new
                 byte[] salt = cryptoService.GenerateRandomSalt();
                 byte[] passwordHashWithRandomSalt = cryptoService.HashPassword(record.PlaintextPassword, salt);
-                var domainName = Helper.GetDomainFromEmail(record.Email);
+                string domainName = Helper.GetDomainFromEmail(record.Email);
 
-                var domain = dbContext.Domains
+                Domain? domain = dbContext.Domains
                     .Include(d => d.AssociatedByCustomers)
                     .SingleOrDefault(d => d.DomainName == domainName);
-                var customers = domain?.AssociatedByCustomers ?? [];
+                List<Customer> customers = domain?.AssociatedByCustomers ?? [];
 
                 Leak newLeak = new()
                 {
@@ -96,7 +96,6 @@ namespace CredentialLeakageMonitoring.Services
                 await dbContext.SaveChangesAsync().ConfigureAwait(false);
             }
 
-            return newLeaks;
         }
     }
 }

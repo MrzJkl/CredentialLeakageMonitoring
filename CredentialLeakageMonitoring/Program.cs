@@ -9,7 +9,21 @@ using Serilog.Events;
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "Credential Leakage Monitoring API",
+        Version = "v1",
+        Description = "An API to monitor and manage credential leakage data.",
+        Contact = new Microsoft.OpenApi.Models.OpenApiContact
+        {
+            Name = "Moritz Jökel",
+            Email = "moritz.joekel.2022@leibniz-fh.de",
+        },
+
+    });
+});
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
@@ -37,15 +51,18 @@ app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 
-app.MapPost("/upload", async (IFormFile file, IngestionService ingestionService) =>
+app.MapPost("/ingest", async (IFormFile file, IngestionService ingestionService) =>
 {
     if (file is null || file.Length == 0)
         return Results.BadRequest("No file uploaded.");
 
     await ingestionService.IngestCsvAsync(file.OpenReadStream());
 
-    return Results.Ok();
-}).DisableAntiforgery();
+    return Results.NoContent();
+})
+.DisableAntiforgery()
+.WithDescription("Upload a CSV file containing newly leaked credentials. CSV should be separated with colon. E.g. someone@example.com,mysecretpassword")
+.Produces(StatusCodes.Status204NoContent);
 
 app.MapGet("/query", async (string email, QueryService queryService) =>
 {
@@ -54,7 +71,10 @@ app.MapGet("/query", async (string email, QueryService queryService) =>
     List<LeakModel> leaks = await queryService.SearchForLeaksByEmail(email);
 
     return Results.Ok(leaks);
-});
+})
+.WithDescription("Query the credentials database for your email address to see if its leaked.")
+.Produces<List<LeakModel>>(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status400BadRequest);
 
 app.MapPost("/customers", async (CreateCustomerModel model, CustomerService customerService) =>
 {
@@ -63,13 +83,18 @@ app.MapPost("/customers", async (CreateCustomerModel model, CustomerService cust
 
     CustomerModel createdCustomer = await customerService.CreateCustomer(model);
     return Results.Created($"/customers/{createdCustomer.Id}", createdCustomer);
-});
+})
+.WithDescription("Create a new customer.")
+.Produces<CustomerModel>(StatusCodes.Status201Created)
+.Produces(StatusCodes.Status400BadRequest);
 
 app.MapGet("/customers", async (CustomerService customerService) =>
 {
     List<CustomerModel> customers = await customerService.GetCustomers();
     return Results.Ok(customers);
-});
+})
+.WithDescription("List all existing customers.")
+.Produces<List<CustomerModel>>(StatusCodes.Status200OK);
 
 app.MapGet("/customers/{id:guid}", async (Guid id, CustomerService customerService) =>
 {
@@ -78,7 +103,10 @@ app.MapGet("/customers/{id:guid}", async (Guid id, CustomerService customerServi
         return Results.NotFound($"Customer with ID {id} not found.");
 
     return Results.Ok(customer);
-});
+})
+.WithDescription("Get a single customer.")
+.Produces<CustomerModel>(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status404NotFound);
 
 app.MapPut("/customers/{id:guid}", async (Guid id, CustomerModel model, CustomerService customerService) =>
 {
@@ -94,7 +122,11 @@ app.MapPut("/customers/{id:guid}", async (Guid id, CustomerModel model, Customer
     {
         return Results.NotFound(ex.Message);
     }
-});
+})
+.WithDescription("Update an existing customer.")
+.Produces<CustomerModel>(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status400BadRequest)
+.Produces(StatusCodes.Status404NotFound);
 
 app.MapDelete("/customers/{id:guid}", async (Guid id, ApplicationDbContext dbContext) =>
 {
@@ -109,13 +141,18 @@ app.MapDelete("/customers/{id:guid}", async (Guid id, ApplicationDbContext dbCon
     await dbContext.SaveChangesAsync();
 
     return Results.NoContent();
-});
+})
+.WithDescription("Delete an existing customer.")
+.Produces<CustomerModel>(StatusCodes.Status204NoContent)
+.Produces(StatusCodes.Status404NotFound);
 
 app.MapGet("/customers/{id:guid}/query", async (Guid id, QueryService queryService) =>
 {
     List<LeakModel> leaks = await queryService.SearchForLeaksByCustomerId(id);
 
     return Results.Ok(leaks);
-});
+})
+.WithDescription("Query the database to search for existing leaks for a possible newly created customer.")
+.Produces<CustomerModel>(StatusCodes.Status200OK);
 
 app.Run();
