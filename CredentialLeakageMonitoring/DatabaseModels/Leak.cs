@@ -12,31 +12,41 @@ namespace CredentialLeakageMonitoring.DatabaseModels
         public Guid Id { get; init; }
 
         [MaxLength(64)]
+        [Required]
         public byte[] EmailHash { get; set; }
 
         [MaxLength(255)]
+        [Required]
         public string EMailAlgorithm { get; set; }
 
         [MaxLength(255)]
+        [Required]
         public string ObfuscatedPassword { get; set; }
 
         [MaxLength(64)]
+        [Required]
         public byte[] PasswordHash { get; set; }
 
         [MaxLength(16)]
+        [Required]
         public byte[] PasswordSalt { get; set; }
 
         [MaxLength(255)]
+        [Required]
         public string PasswordAlgorithmVersion { get; set; }
 
         [MaxLength(255)]
+        [Required]
         public string PasswordAlgorithm { get; set; }
 
         [MaxLength(255)]
+        [Required]
         public string Domain { get; set; }
 
+        [Required]
         public DateTimeOffset FirstSeen { get; set; }
 
+        [Required]
         public DateTimeOffset LastSeen { get; set; }
 
         [ForeignKey(nameof(Customer))]
