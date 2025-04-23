@@ -12,7 +12,7 @@ namespace CredentialLeakageMonitoring.Services
         public static readonly string AlgorithmForEmail = nameof(SHA3_512);
         // Argon2 Version 1.3 (v=19) regarding:
         // https://www.nuget.org/packages/Konscious.Security.Cryptography.Argon2
-        public static string AlgorithmVersionForPassword = "v=19";
+        public static readonly string AlgorithmVersionForPassword = "v=19";
 
         public byte[] HashEmail(string email)
         {

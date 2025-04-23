@@ -21,7 +21,7 @@ namespace CredentialLeakageMonitoring.Services
             });
 
             System.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable<IngestionLeakModel> records = csv.GetRecordsAsync<IngestionLeakModel>().ConfigureAwait(false);
-            List<Leak> newLeaks = new();
+            List<Leak> newLeaks = [];
 
             await foreach (IngestionLeakModel? record in records)
             {
