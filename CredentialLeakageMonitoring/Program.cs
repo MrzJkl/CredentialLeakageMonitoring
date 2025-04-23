@@ -14,7 +14,7 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
     .Filter.ByExcluding(e =>
         e.Level == LogEventLevel.Information &&
-        e.Properties.TryGetValue("SourceContext", out var c) &&
+        e.Properties.TryGetValue("SourceContext", out LogEventPropertyValue? c) &&
         c.Equals(new ScalarValue("Microsoft.EntityFrameworkCore.Database.Command")))
     .CreateLogger();
 

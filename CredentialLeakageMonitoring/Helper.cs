@@ -23,7 +23,7 @@ namespace CredentialLeakageMonitoring
 
         public static string GetDomainFromEmail(string email)
         {
-            var mail = new MailAddress(email);
+            MailAddress mail = new(email);
             return mail.Host.ToLowerInvariant();
         }
 

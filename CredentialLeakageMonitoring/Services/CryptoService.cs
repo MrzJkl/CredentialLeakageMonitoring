@@ -16,10 +16,10 @@ namespace CredentialLeakageMonitoring.Services
 
         public byte[] HashEmail(string email)
         {
-            var sw = Stopwatch.StartNew();
+            Stopwatch sw = Stopwatch.StartNew();
             email = email.Trim().ToLowerInvariant();
             byte[] inputBytes = Encoding.UTF8.GetBytes(email);
-            var hash = SHA3_512.HashData(inputBytes);
+            byte[] hash = SHA3_512.HashData(inputBytes);
             sw.Stop();
             log.LogInformation("HashEmail took {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);
             return hash;
@@ -27,7 +27,7 @@ namespace CredentialLeakageMonitoring.Services
 
         public byte[] HashPassword(string password, byte[] salt)
         {
-            var sw = Stopwatch.StartNew();
+            Stopwatch sw = Stopwatch.StartNew();
             Argon2id argon2 = new(Encoding.UTF8.GetBytes(password))
             {
                 Salt = salt,
@@ -36,7 +36,7 @@ namespace CredentialLeakageMonitoring.Services
                 MemorySize = 1024 * 1024 // 1 GB
             };
 
-            var hash = argon2.GetBytes(32);
+            byte[] hash = argon2.GetBytes(32);
 
             sw.Stop();
             log.LogInformation("HashPassword took {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);
