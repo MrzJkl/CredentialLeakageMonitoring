@@ -23,11 +23,53 @@ namespace CredentialLeakageMonitoring.Services
                 FirstSeen = l.FirstSeen,
                 LastSeen = l.LastSeen,
                 Domain = l.Domain,
-                Customer = l.Customer != null ? new CustomerModel
+                AssociatedCustomers = [.. l.AssociatedCustomers.Select(c => new CustomerModel
                 {
-                    Id = l.Customer.Id,
-                    Name = l.Customer.Name
-                } : null
+                    Id = c.Id,
+                    Name = c.Name
+                })],
+            })];
+        }
+
+        public async Task<List<LeakModel>> SearchForLeaksByCustomerId(Guid customerId)
+        {
+            var customer = await dbContext.Customers
+                .Include(c => c.AssociatedDomains)
+                .SingleOrDefaultAsync(c => c.Id == customerId)
+                .ConfigureAwait(false) ?? throw new Exception($"Customer with ID {customerId} not found.");
+
+            var domainNames = customer.AssociatedDomains.Select(d => d.DomainName).ToList();
+
+            List<DatabaseModels.Leak> leaks = await dbContext.Leaks
+                .Include(l => l.AssociatedCustomers)
+                .Where(l => domainNames.Contains(l.Domain))
+                .ToListAsync()
+                .ConfigureAwait(false);
+
+            foreach (var leak in leaks)
+            {
+                if (!leak.AssociatedCustomers.Any(c => c.Id == customerId))
+                {
+                    leak.AssociatedCustomers.Add(customer);
+
+                    await dbContext.SaveChangesAsync();
+                }
+            }
+
+            return [.. leaks.Select(l => new LeakModel
+            {
+                Id = l.Id,
+                EmailHash = Convert.ToBase64String(l.EmailHash),
+                ObfuscatedPassword = l.ObfuscatedPassword,
+                FirstSeen = l.FirstSeen,
+                LastSeen = l.LastSeen,
+                Domain = l.Domain,
+                AssociatedCustomers = [.. l.AssociatedCustomers.Select(c => new CustomerModel
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    AssociatedDomains = [.. c.AssociatedDomains.Select(d => d.DomainName)],
+                })],
             })];
         }
     }

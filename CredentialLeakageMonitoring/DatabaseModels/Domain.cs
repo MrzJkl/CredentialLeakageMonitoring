@@ -11,7 +11,7 @@ namespace CredentialLeakageMonitoring.DatabaseModels
 
         [Required]
         [MaxLength(255)]
-        public string DomainName { get; init; }
+        public string DomainName { get; init; } = string.Empty;
 
         public virtual List<Customer> AssociatedByCustomers { get; init; } = [];
     }

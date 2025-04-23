@@ -67,6 +67,12 @@ namespace CredentialLeakageMonitoring.Services
                 // Leak is really new
                 byte[] salt = cryptoService.GenerateRandomSalt();
                 byte[] passwordHashWithRandomSalt = cryptoService.HashPassword(record.PlaintextPassword, salt);
+                var domainName = Helper.GetDomainFromEmail(record.Email);
+
+                var domain = dbContext.Domains
+                    .Include(d => d.AssociatedByCustomers)
+                    .SingleOrDefault(d => d.DomainName == domainName);
+                var customers = domain?.AssociatedByCustomers ?? [];
 
                 Leak newLeak = new()
                 {
@@ -78,7 +84,8 @@ namespace CredentialLeakageMonitoring.Services
                     PasswordAlgorithmVersion = CryptoService.AlgorithmVersionForPassword,
                     PasswordAlgorithm = CryptoService.AlgorithmForPassword,
                     EMailAlgorithm = CryptoService.AlgorithmForEmail,
-                    Domain = Helper.GetDomainFromEmail(record.Email),
+                    Domain = domainName,
+                    AssociatedCustomers = customers,
                     FirstSeen = DateTimeOffset.UtcNow,
                     LastSeen = DateTimeOffset.UtcNow
                 };

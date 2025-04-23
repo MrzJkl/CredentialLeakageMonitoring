@@ -14,6 +14,6 @@
 
         public string Domain { get; init; } = string.Empty;
 
-        public CustomerModel? Customer { get; init; } = null;
+        public List<CustomerModel> AssociatedCustomers { get; init; } = [];
     }
 }

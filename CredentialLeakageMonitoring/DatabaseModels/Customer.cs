@@ -10,8 +10,10 @@ namespace CredentialLeakageMonitoring.DatabaseModels
         public Guid Id { get; set; }
 
         [MaxLength(255)]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         public virtual List<Domain> AssociatedDomains { get; set; } = [];
+
+        public virtual List<Leak> AssociatedLeaks { get; set; } = [];
     }
 }

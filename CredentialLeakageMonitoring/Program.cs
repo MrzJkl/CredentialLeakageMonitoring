@@ -22,11 +22,6 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Host.UseSerilog();
 
-builder.Services.AddLogging(options =>
-{
-    options.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Warning); // SQL unterdrücken
-});
-
 string? connectionString = builder.Configuration.GetConnectionString("Postgres");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
@@ -63,7 +58,7 @@ app.MapGet("/query", async (string email, QueryService queryService) =>
 
 app.MapPost("/customers", async (CreateCustomerModel model, CustomerService customerService) =>
 {
-    if (model == null || string.IsNullOrWhiteSpace(model.Name) || model.AssociatedDomains == null || model.AssociatedDomains.Count == 0)
+    if (model == null || string.IsNullOrWhiteSpace(model.Name) || model.AssociatedDomains.Count == 0)
         return Results.BadRequest("Invalid customer data.");
 
     CustomerModel createdCustomer = await customerService.CreateCustomer(model);
@@ -87,7 +82,7 @@ app.MapGet("/customers/{id:guid}", async (Guid id, CustomerService customerServi
 
 app.MapPut("/customers/{id:guid}", async (Guid id, CustomerModel model, CustomerService customerService) =>
 {
-    if (model == null || id != model.Id || string.IsNullOrWhiteSpace(model.Name) || model.AssociatedDomains == null || model.AssociatedDomains.Count == 0)
+    if (model == null || id != model.Id || string.IsNullOrWhiteSpace(model.Name) || model.AssociatedDomains.Count == 0)
         return Results.BadRequest("Invalid customer data.");
 
     try
@@ -114,6 +109,13 @@ app.MapDelete("/customers/{id:guid}", async (Guid id, ApplicationDbContext dbCon
     await dbContext.SaveChangesAsync();
 
     return Results.NoContent();
+});
+
+app.MapGet("/customers/{id:guid}/query", async (Guid id, QueryService queryService) =>
+{
+    List<LeakModel> leaks = await queryService.SearchForLeaksByCustomerId(id);
+
+    return Results.Ok(leaks);
 });
 
 app.Run();

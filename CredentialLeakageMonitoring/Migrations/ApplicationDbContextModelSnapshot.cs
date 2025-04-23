@@ -66,9 +66,6 @@ namespace CredentialLeakageMonitoring.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("CustomerId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("Domain")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -117,8 +114,6 @@ namespace CredentialLeakageMonitoring.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CustomerId");
-
                     b.HasIndex("Domain");
 
                     b.HasIndex("EmailHash");
@@ -141,13 +136,19 @@ namespace CredentialLeakageMonitoring.Migrations
                     b.ToTable("CustomerDomain");
                 });
 
-            modelBuilder.Entity("CredentialLeakageMonitoring.DatabaseModels.Leak", b =>
+            modelBuilder.Entity("CustomerLeak", b =>
                 {
-                    b.HasOne("CredentialLeakageMonitoring.DatabaseModels.Customer", "Customer")
-                        .WithMany()
-                        .HasForeignKey("CustomerId");
+                    b.Property<Guid>("AssociatedCustomersId")
+                        .HasColumnType("uuid");
 
-                    b.Navigation("Customer");
+                    b.Property<Guid>("AssociatedLeaksId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("AssociatedCustomersId", "AssociatedLeaksId");
+
+                    b.HasIndex("AssociatedLeaksId");
+
+                    b.ToTable("CustomerLeak");
                 });
 
             modelBuilder.Entity("CustomerDomain", b =>
@@ -161,6 +162,21 @@ namespace CredentialLeakageMonitoring.Migrations
                     b.HasOne("CredentialLeakageMonitoring.DatabaseModels.Domain", null)
                         .WithMany()
                         .HasForeignKey("AssociatedDomainsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CustomerLeak", b =>
+                {
+                    b.HasOne("CredentialLeakageMonitoring.DatabaseModels.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("AssociatedCustomersId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CredentialLeakageMonitoring.DatabaseModels.Leak", null)
+                        .WithMany()
+                        .HasForeignKey("AssociatedLeaksId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
