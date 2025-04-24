@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace CredentialLeakageMonitoring.Services
+namespace CredentialLeakageMonitoring.API.Services
 {
     public class CryptoService(ILogger<CryptoService> log)
     {
@@ -28,21 +28,22 @@ namespace CredentialLeakageMonitoring.Services
         public byte[] HashPassword(string password, byte[] salt)
         {
             Stopwatch sw = Stopwatch.StartNew();
-            Argon2id argon2 = new(Encoding.UTF8.GetBytes(password))
-            {
-                Salt = salt,
-                DegreeOfParallelism = 8,
-                Iterations = 1,
-                MemorySize = 65536  // 64KB
-            };
 
-            byte[] hash = argon2.GetBytes(32);
+            byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
+            byte[] saltedPassword = new byte[salt.Length + passwordBytes.Length];
+
+            // Kombiniere Salt + Passwort (Salt vorne)
+            Buffer.BlockCopy(salt, 0, saltedPassword, 0, salt.Length);
+            Buffer.BlockCopy(passwordBytes, 0, saltedPassword, salt.Length, passwordBytes.Length);
+
+            byte[] hash = SHA3_512.HashData(saltedPassword);
 
             sw.Stop();
-            log.LogInformation("HashPassword took {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);
+            log.LogInformation("HashPassword (SHA3-512) took {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);
 
             return hash;
         }
+        
 
         public byte[] GenerateRandomSalt()
         {

@@ -1,7 +1,7 @@
-﻿using CredentialLeakageMonitoring.DatabaseModels;
+﻿using CredentialLeakageMonitoring.API.DatabaseModels;
 using Microsoft.EntityFrameworkCore;
 
-namespace CredentialLeakageMonitoring.Database
+namespace CredentialLeakageMonitoring.API.Database
 {
     public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
     {

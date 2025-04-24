@@ -1,17 +1,17 @@
-﻿using CredentialLeakageMonitoring.ApiModels;
-using CredentialLeakageMonitoring.Database;
-using CredentialLeakageMonitoring.DatabaseModels;
+﻿using CredentialLeakageMonitoring.API.ApiModels;
+using CredentialLeakageMonitoring.API.Database;
+using CredentialLeakageMonitoring.API.DatabaseModels;
 using CsvHelper;
 using CsvHelper.Configuration;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using System.Globalization;
 
-namespace CredentialLeakageMonitoring.Services
+namespace CredentialLeakageMonitoring.API.Services
 {
     public class IngestionService(IDbContextFactory<ApplicationDbContext> dbContextFactory, CryptoService cryptoService, ILogger<IngestionService> log)
     {
-        public async Task IngestCsvAsync(Stream csvStream, int chunkSize = 100)
+        public async Task IngestCsvAsync(Stream csvStream, int chunkSize = 1100)
         {
             var sw = Stopwatch.StartNew();
             var records = new List<IngestionLeakModel>();
@@ -72,7 +72,7 @@ namespace CredentialLeakageMonitoring.Services
                     .Include(d => d.AssociatedByCustomers)
                     .SingleOrDefault(d => d.DomainName == domainName);
 
-                var customers = domain?.AssociatedByCustomers ?? new List<Customer>();
+                var customers = domain?.AssociatedByCustomers ?? [];
 
                 var newLeak = new Leak
                 {
@@ -108,7 +108,7 @@ namespace CredentialLeakageMonitoring.Services
                     chunk = new(size);
                 }
             }
-            if (chunk.Any())
+            if (chunk.Count != 0)
                 yield return chunk;
         }
     }

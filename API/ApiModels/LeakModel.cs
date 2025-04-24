@@ -1,4 +1,4 @@
-﻿namespace CredentialLeakageMonitoring.ApiModels
+﻿namespace CredentialLeakageMonitoring.API.ApiModels
 {
     public record LeakModel
     {

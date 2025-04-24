@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace CredentialLeakageMonitoring.ApiModels
+namespace CredentialLeakageMonitoring.API.ApiModels
 {
     public record CreateCustomerModel
     {

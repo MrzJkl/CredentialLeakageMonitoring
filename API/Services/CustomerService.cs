@@ -1,9 +1,9 @@
-﻿using CredentialLeakageMonitoring.ApiModels;
-using CredentialLeakageMonitoring.Database;
-using CredentialLeakageMonitoring.DatabaseModels;
+﻿using CredentialLeakageMonitoring.API.ApiModels;
+using CredentialLeakageMonitoring.API.Database;
+using CredentialLeakageMonitoring.API.DatabaseModels;
 using Microsoft.EntityFrameworkCore;
 
-namespace CredentialLeakageMonitoring.Services
+namespace CredentialLeakageMonitoring.API.Services
 {
     public class CustomerService(IDbContextFactory<ApplicationDbContext> dbContextFactory)
     {

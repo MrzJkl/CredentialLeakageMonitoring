@@ -1,7 +1,7 @@
-using CredentialLeakageMonitoring.ApiModels;
-using CredentialLeakageMonitoring.Database;
-using CredentialLeakageMonitoring.DatabaseModels;
-using CredentialLeakageMonitoring.Services;
+using CredentialLeakageMonitoring.API.ApiModels;
+using CredentialLeakageMonitoring.API.Database;
+using CredentialLeakageMonitoring.API.DatabaseModels;
+using CredentialLeakageMonitoring.API.Services;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Events;
@@ -28,7 +28,7 @@ builder.Services.AddSwaggerGen(options =>
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
-    .WriteTo.Console()
+    .WriteTo.Async(c => c.Console())
     .Filter.ByExcluding(e =>
         e.Level == LogEventLevel.Information &&
         e.Properties.TryGetValue("SourceContext", out LogEventPropertyValue? c) &&
