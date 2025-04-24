@@ -38,7 +38,7 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 string? connectionString = builder.Configuration.GetConnectionString("Postgres");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 builder.Services.AddScoped<IngestionService>();
 builder.Services.AddScoped<CryptoService>();

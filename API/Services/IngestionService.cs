@@ -9,80 +9,77 @@ using System.Globalization;
 
 namespace CredentialLeakageMonitoring.Services
 {
-    public class IngestionService(ApplicationDbContext dbContext, CryptoService cryptoService, ILogger<IngestionService> log)
+    public class IngestionService(IDbContextFactory<ApplicationDbContext> dbContextFactory, CryptoService cryptoService, ILogger<IngestionService> log)
     {
-        public async Task IngestCsvAsync(Stream csvStream)
+        public async Task IngestCsvAsync(Stream csvStream, int chunkSize = 100)
         {
             var sw = Stopwatch.StartNew();
-            using StreamReader reader = new(csvStream);
-            using CsvReader csv = new(reader, new CsvConfiguration(CultureInfo.InvariantCulture)
+            var records = new List<IngestionLeakModel>();
+
+            using var reader = new StreamReader(csvStream);
+            using var csv = new CsvReader(reader, new CsvConfiguration(CultureInfo.InvariantCulture)
             {
                 Delimiter = ",",
                 HasHeaderRecord = false,
                 TrimOptions = TrimOptions.Trim,
             });
 
-            System.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable<IngestionLeakModel> records = csv.GetRecordsAsync<IngestionLeakModel>().ConfigureAwait(false);
-            List<Leak> newLeaks = [];
-            var numberOfRecords = 0;
+            await foreach (var record in csv.GetRecordsAsync<IngestionLeakModel>())
+            {
+                records.Add(record);
+            }
 
-            await foreach (IngestionLeakModel? record in records)
+            var chunks = Chunk(records, chunkSize);
+            var tasks = chunks.Select(chunk => ProcessChunkAsync(chunk));
+            await Task.WhenAll(tasks);
+
+            sw.Stop();
+            log.LogInformation("Ingestion of {Count} leaks took {Elapsed}", records.Count, sw.Elapsed);
+        }
+
+        private async Task ProcessChunkAsync(List<IngestionLeakModel> chunk)
+        {
+            await using var dbContext = dbContextFactory.CreateDbContext();
+
+            foreach (var record in chunk)
             {
                 byte[] emailHash = cryptoService.HashEmail(record.Email);
 
-                List<Leak> existingLeaksForMailaddress = await dbContext.Leaks
+                var existingLeaks = await dbContext.Leaks
                     .Where(l => l.EmailHash == emailHash)
-                    .ToListAsync()
-                    .ConfigureAwait(false);
-
-                log.LogInformation("Found {Count} existing leaks for email {Email}", existingLeaksForMailaddress.Count, record.Email);
+                    .ToListAsync();
 
                 bool foundMatchingLeak = false;
 
-                foreach (Leak? existingLeak in existingLeaksForMailaddress)
+                foreach (var existingLeak in existingLeaks)
                 {
-                    if (foundMatchingLeak)
+                    var passwordHash = cryptoService.HashPassword(record.PlaintextPassword, existingLeak.PasswordSalt);
+                    if (passwordHash.SequenceEqual(existingLeak.PasswordHash))
                     {
+                        existingLeak.LastSeen = DateTimeOffset.UtcNow;
+                        foundMatchingLeak = true;
                         break;
                     }
-
-                    byte[] passwordHashWithExistingSalt = cryptoService.HashPassword(record.PlaintextPassword, existingLeak.PasswordSalt);
-
-                    if (passwordHashWithExistingSalt.SequenceEqual(existingLeak.PasswordHash))
-                    {
-                        log.LogInformation("Found matching leak for email {Email} with password {Password}", record.Email, existingLeak.ObfuscatedPassword);
-                        existingLeak.LastSeen = DateTimeOffset.UtcNow;
-                        await dbContext.SaveChangesAsync().ConfigureAwait(false);
-                        foundMatchingLeak = true;
-
-                        continue;
-                    }
                 }
 
-                if (foundMatchingLeak)
-                {
-                    // Next record
-                    continue;
-                }
+                if (foundMatchingLeak) continue;
 
-                log.LogInformation("No matching leak found for email {Email}. Adding leak as new.", record.Email);
-
-                // Leak is really new
                 byte[] salt = cryptoService.GenerateRandomSalt();
-                byte[] passwordHashWithRandomSalt = cryptoService.HashPassword(record.PlaintextPassword, salt);
+                byte[] passwordHashWithSalt = cryptoService.HashPassword(record.PlaintextPassword, salt);
                 string domainName = Helper.GetDomainFromEmail(record.Email);
 
-                Domain? domain = dbContext.Domains
+                var domain = dbContext.Domains
                     .Include(d => d.AssociatedByCustomers)
                     .SingleOrDefault(d => d.DomainName == domainName);
-                List<Customer> customers = domain?.AssociatedByCustomers ?? [];
 
-                Leak newLeak = new()
+                var customers = domain?.AssociatedByCustomers ?? new List<Customer>();
+
+                var newLeak = new Leak
                 {
                     Id = Guid.NewGuid(),
                     EmailHash = emailHash,
                     ObfuscatedPassword = Helper.ObfuscatePassword(record.PlaintextPassword),
-                    PasswordHash = passwordHashWithRandomSalt,
+                    PasswordHash = passwordHashWithSalt,
                     PasswordSalt = salt,
                     PasswordAlgorithmVersion = CryptoService.AlgorithmVersionForPassword,
                     PasswordAlgorithm = CryptoService.AlgorithmForPassword,
@@ -93,15 +90,26 @@ namespace CredentialLeakageMonitoring.Services
                     LastSeen = DateTimeOffset.UtcNow
                 };
 
-                newLeaks.Add(newLeak);
-
-                dbContext.Leaks.Add(newLeak);
-                await dbContext.SaveChangesAsync().ConfigureAwait(false);
-                numberOfRecords++;
+                dbContext.Leaks.Add(newLeak); 
             }
 
-            sw.Stop();
-            log.LogInformation("Ingstion of {Count} took {Elapsed}", numberOfRecords, sw.Elapsed);
+            await dbContext.SaveChangesAsync();
+        }
+
+        private static IEnumerable<List<T>> Chunk<T>(IEnumerable<T> source, int size)
+        {
+            List<T> chunk = new(size);
+            foreach (var item in source)
+            {
+                chunk.Add(item);
+                if (chunk.Count >= size)
+                {
+                    yield return chunk;
+                    chunk = new(size);
+                }
+            }
+            if (chunk.Any())
+                yield return chunk;
         }
     }
 }
