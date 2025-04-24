@@ -1,0 +1,12 @@
+{
+  "recommendations": [
+    "google.arb-editor",
+    "dart-code.dart-code",
+    "dart-code.flutter",
+    "esbenp.prettier-vscode",
+    "eamodio.gitlens",
+    "streetsidesoftware.code-spell-checker",
+    "streetsidesoftware.code-spell-checker-german",
+    "gmlewis-vscode.flutter-stylizer"
+  ]
+}
