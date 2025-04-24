@@ -4,6 +4,7 @@ using CredentialLeakageMonitoring.DatabaseModels;
 using CsvHelper;
 using CsvHelper.Configuration;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 using System.Globalization;
 
 namespace CredentialLeakageMonitoring.Services
@@ -12,6 +13,7 @@ namespace CredentialLeakageMonitoring.Services
     {
         public async Task IngestCsvAsync(Stream csvStream)
         {
+            var sw = Stopwatch.StartNew();
             using StreamReader reader = new(csvStream);
             using CsvReader csv = new(reader, new CsvConfiguration(CultureInfo.InvariantCulture)
             {
@@ -22,6 +24,7 @@ namespace CredentialLeakageMonitoring.Services
 
             System.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable<IngestionLeakModel> records = csv.GetRecordsAsync<IngestionLeakModel>().ConfigureAwait(false);
             List<Leak> newLeaks = [];
+            var numberOfRecords = 0;
 
             await foreach (IngestionLeakModel? record in records)
             {
@@ -94,8 +97,11 @@ namespace CredentialLeakageMonitoring.Services
 
                 dbContext.Leaks.Add(newLeak);
                 await dbContext.SaveChangesAsync().ConfigureAwait(false);
+                numberOfRecords++;
             }
 
+            sw.Stop();
+            log.LogInformation("Ingstion of {Count} took {Elapsed}", numberOfRecords, sw.Elapsed);
         }
     }
 }

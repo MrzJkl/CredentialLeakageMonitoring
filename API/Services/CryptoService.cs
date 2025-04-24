@@ -31,9 +31,9 @@ namespace CredentialLeakageMonitoring.Services
             Argon2id argon2 = new(Encoding.UTF8.GetBytes(password))
             {
                 Salt = salt,
-                DegreeOfParallelism = 16,
-                Iterations = 2,
-                MemorySize = 1024 * 1024 // 1 GB
+                DegreeOfParallelism = 8,
+                Iterations = 1,
+                MemorySize = 65536  // 64KB
             };
 
             byte[] hash = argon2.GetBytes(32);
