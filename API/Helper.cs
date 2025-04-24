@@ -26,6 +26,5 @@ namespace CredentialLeakageMonitoring
             MailAddress mail = new(email);
             return mail.Host.ToLowerInvariant();
         }
-
     }
 }

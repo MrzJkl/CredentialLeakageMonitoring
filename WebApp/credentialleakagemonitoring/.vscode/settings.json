@@ -1,0 +1,7 @@
+{
+  "files.autoSave": "onFocusChange",
+  "editor.tabSize": 2,
+  "editor.formatOnSave": true,
+  "editor.detectIndentation": false,
+  "editor.defaultFormatter": "Dart-Code.flutter"
+}

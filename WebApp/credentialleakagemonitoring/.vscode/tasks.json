@@ -1,0 +1,21 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "flutter",
+      "command": "dart",
+      "args": ["run", "build_runner", "build"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "label": "Dart run: Build_Runner build"
+    },
+    {
+      "type": "flutter",
+      "command": "flutter",
+      "args": ["pub", "get"],
+      "label": "flutter: flutter pub get"
+    }
+  ]
+}
