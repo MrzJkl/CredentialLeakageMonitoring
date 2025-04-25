@@ -1,4 +1,4 @@
-# credentialleakagemonitoring
+# credential_leakage_monitoring
 
 A new Flutter project.
 

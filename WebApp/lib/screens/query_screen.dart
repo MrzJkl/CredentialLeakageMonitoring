@@ -1,5 +1,5 @@
-import 'package:credentialleakagemonitoring/models/leak_model.dart';
-import 'package:credentialleakagemonitoring/services/api_service.dart';
+import 'package:credential_leakage_monitoring/models/leak_model.dart';
+import 'package:credential_leakage_monitoring/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 

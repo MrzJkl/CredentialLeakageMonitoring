@@ -1,4 +1,5 @@
-import 'package:credentialleakagemonitoring/screens/query_screen.dart';
+import 'package:credential_leakage_monitoring/screens/query_screen.dart';
+import 'package:credential_leakage_monitoring/screens/customer_list_screen.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -8,7 +9,6 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -37,6 +37,50 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
+      ),
+      drawer: Drawer(
+        child: ListView(
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              child: Text(
+                'Navigation',
+                style: TextStyle(color: Colors.white, fontSize: 24),
+              ),
+            ),
+            ListTile(
+              leading: Icon(Icons.search),
+              title: Text('Query'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (context) => const MyHomePage(
+                          title: 'Credential Leakage Monitoring',
+                        ),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.people),
+              title: Text('Customers'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CustomerListScreen(),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
       ),
       body: const QueryScreen(),
     );

@@ -47,6 +47,7 @@ namespace CredentialLeakageMonitoring.API.Services
             List<DatabaseModels.Leak> leaks = await dbContext.Leaks
                 .Include(l => l.AssociatedCustomers)
                 .Where(l => domainNames.Contains(l.Domain))
+                .OrderByDescending(l => l.FirstSeen)
                 .ToListAsync()
                 .ConfigureAwait(false);
 

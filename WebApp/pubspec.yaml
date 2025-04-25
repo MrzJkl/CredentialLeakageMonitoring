@@ -1,4 +1,4 @@
-name: credentialleakagemonitoring
+name: credential_leakage_monitoring
 version: 1.0.0+1
 
 environment:

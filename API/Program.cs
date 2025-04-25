@@ -158,6 +158,6 @@ app.MapGet("/customers/{id:guid}/query", async (Guid id, QueryService queryServi
     return Results.Ok(leaks);
 })
 .WithDescription("Query the database to search for existing leaks for a possible newly created customer.")
-.Produces<CustomerModel>(StatusCodes.Status200OK);
+.Produces<List<LeakModel>>(StatusCodes.Status200OK);
 
 app.Run();

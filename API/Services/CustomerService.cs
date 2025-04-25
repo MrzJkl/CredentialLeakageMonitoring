@@ -47,10 +47,12 @@ namespace CredentialLeakageMonitoring.API.Services
             using var dbContext = await dbContextFactory.CreateDbContextAsync();
 
             List<Customer> customers = await dbContext.Customers
+                .OrderBy(c => c.Name)
                 .Include(c => c.AssociatedDomains)
                 .ToListAsync();
 
-            return [.. customers.Select(c => new CustomerModel
+            return [.. customers
+                .Select(c => new CustomerModel
             {
                 Id = c.Id,
                 Name = c.Name,
