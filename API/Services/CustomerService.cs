@@ -1,14 +1,15 @@
-﻿using CredentialLeakageMonitoring.ApiModels;
-using CredentialLeakageMonitoring.Database;
-using CredentialLeakageMonitoring.DatabaseModels;
+﻿using CredentialLeakageMonitoring.API.ApiModels;
+using CredentialLeakageMonitoring.API.Database;
+using CredentialLeakageMonitoring.API.DatabaseModels;
 using Microsoft.EntityFrameworkCore;
 
-namespace CredentialLeakageMonitoring.Services
+namespace CredentialLeakageMonitoring.API.Services
 {
-    public class CustomerService(ApplicationDbContext dbContext)
+    public class CustomerService(IDbContextFactory<ApplicationDbContext> dbContextFactory)
     {
         public async Task<CustomerModel> CreateCustomer(CreateCustomerModel model)
         {
+            using var dbContext = await dbContextFactory.CreateDbContextAsync();
             List<Domain> existingDomains = await dbContext.Domains
                 .Where(d => model.AssociatedDomains.Contains(d.DomainName))
                 .ToListAsync();
@@ -43,6 +44,8 @@ namespace CredentialLeakageMonitoring.Services
 
         public async Task<List<CustomerModel>> GetCustomers()
         {
+            using var dbContext = await dbContextFactory.CreateDbContextAsync();
+
             List<Customer> customers = await dbContext.Customers
                 .Include(c => c.AssociatedDomains)
                 .ToListAsync();
@@ -58,6 +61,8 @@ namespace CredentialLeakageMonitoring.Services
 
         public async Task<CustomerModel?> GetCustomer(Guid id)
         {
+            using var dbContext = await dbContextFactory.CreateDbContextAsync();
+
             Customer? customer = await dbContext.Customers
                 .Include(c => c.AssociatedDomains)
                 .SingleOrDefaultAsync(c => c.Id == id);
@@ -77,6 +82,8 @@ namespace CredentialLeakageMonitoring.Services
 
         public async Task<CustomerModel> UpdateCustomer(CustomerModel customerModel)
         {
+            using var dbContext = await dbContextFactory.CreateDbContextAsync();
+
             Customer? customer = await dbContext.Customers
                 .Include(c => c.AssociatedDomains)
                 .SingleOrDefaultAsync(c => c.Id == customerModel.Id)
@@ -114,6 +121,8 @@ namespace CredentialLeakageMonitoring.Services
 
         public async Task DeleteCustomer(Guid id)
         {
+            using var dbContext = await dbContextFactory.CreateDbContextAsync();
+
             Customer? customer = await dbContext.Customers
                 .Include(c => c.AssociatedDomains)
                 .SingleOrDefaultAsync(c => c.Id == id)

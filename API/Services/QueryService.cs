@@ -1,13 +1,15 @@
-﻿using CredentialLeakageMonitoring.ApiModels;
-using CredentialLeakageMonitoring.Database;
+﻿using CredentialLeakageMonitoring.API.ApiModels;
+using CredentialLeakageMonitoring.API.Database;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 
-namespace CredentialLeakageMonitoring.Services
+namespace CredentialLeakageMonitoring.API.Services
 {
-    public class QueryService(ApplicationDbContext dbContext, CryptoService cryptoService)
+    public class QueryService(IDbContextFactory<ApplicationDbContext> dbContextFactory, CryptoService cryptoService)
     {
         public async Task<List<LeakModel>> SearchForLeaksByEmail(string eMail)
         {
+            using var dbContext = await dbContextFactory.CreateDbContextAsync();
             byte[] emailHash = cryptoService.HashEmail(eMail);
 
             List<DatabaseModels.Leak> leaks = await dbContext.Leaks
@@ -33,12 +35,14 @@ namespace CredentialLeakageMonitoring.Services
 
         public async Task<List<LeakModel>> SearchForLeaksByCustomerId(Guid customerId)
         {
+            using var dbContext = await dbContextFactory.CreateDbContextAsync();
+
             DatabaseModels.Customer customer = await dbContext.Customers
                 .Include(c => c.AssociatedDomains)
                 .SingleOrDefaultAsync(c => c.Id == customerId)
                 .ConfigureAwait(false) ?? throw new Exception($"Customer with ID {customerId} not found.");
 
-            List<string> domainNames = customer.AssociatedDomains.Select(d => d.DomainName).ToList();
+            List<string> domainNames = [.. customer.AssociatedDomains.Select(d => d.DomainName)];
 
             List<DatabaseModels.Leak> leaks = await dbContext.Leaks
                 .Include(l => l.AssociatedCustomers)

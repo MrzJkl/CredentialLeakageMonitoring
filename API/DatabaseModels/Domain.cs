@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
-namespace CredentialLeakageMonitoring.DatabaseModels
+namespace CredentialLeakageMonitoring.API.DatabaseModels
 {
     [Index(nameof(DomainName), IsUnique = true)]
     public class Domain
