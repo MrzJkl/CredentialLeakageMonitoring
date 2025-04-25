@@ -8,6 +8,8 @@ using Serilog.Events;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration.AddEnvironmentVariables();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddCors();
 builder.Services.AddSwaggerGen(options =>
@@ -19,7 +21,7 @@ builder.Services.AddSwaggerGen(options =>
         Description = "An API to monitor and manage credential leakage data.",
         Contact = new Microsoft.OpenApi.Models.OpenApiContact
         {
-            Name = "Moritz Jökel",
+            Name = "Moritz Joekel",
             Email = "moritz.joekel.2022@leibniz-fh.de",
         },
 
@@ -37,6 +39,7 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Host.UseSerilog();
 
+// Environment-Variable "ConnectionStrings__Postgres"
 string? connectionString = builder.Configuration.GetConnectionString("Postgres");
 builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
@@ -55,6 +58,12 @@ app.UseCors(policy => policy
     .AllowAnyMethod());
 
 app.UseHttpsRedirection();
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    dbContext.Database.Migrate();
+}
 
 app.MapPost("/ingest", async (IFormFile file, IngestionService ingestionService) =>
 {
@@ -133,22 +142,14 @@ app.MapPut("/customers/{id:guid}", async (Guid id, CustomerModel model, Customer
 .Produces(StatusCodes.Status400BadRequest)
 .Produces(StatusCodes.Status404NotFound);
 
-app.MapDelete("/customers/{id:guid}", async (Guid id, ApplicationDbContext dbContext) =>
+app.MapDelete("/customers/{id:guid}", async (Guid id, CustomerService customerService) =>
 {
-    Customer? customer = await dbContext.Customers
-        .Include(c => c.AssociatedDomains)
-        .SingleOrDefaultAsync(c => c.Id == id);
-
-    if (customer == null)
-        return Results.NotFound($"Customer with ID {id} not found.");
-
-    dbContext.Customers.Remove(customer);
-    await dbContext.SaveChangesAsync();
+    await customerService.DeleteCustomer(id);
 
     return Results.NoContent();
 })
 .WithDescription("Delete an existing customer.")
-.Produces<CustomerModel>(StatusCodes.Status204NoContent)
+.Produces(StatusCodes.Status204NoContent)
 .Produces(StatusCodes.Status404NotFound);
 
 app.MapGet("/customers/{id:guid}/query", async (Guid id, QueryService queryService) =>

@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:credential_leakage_monitoring/constants.dart';
 import 'package:credential_leakage_monitoring/models/create_customer_model.dart';
 import 'package:credential_leakage_monitoring/models/customer_model.dart';
 import 'package:credential_leakage_monitoring/models/leak_model.dart';
 
 class ApiService {
+  static const String apiBaseUrl = String.fromEnvironment('API_URL');
+
   factory ApiService() => _instance;
 
   ApiService._internal();
@@ -15,33 +16,32 @@ class ApiService {
   final _client = http.Client();
 
   Future<List<LeakModel>> queryLeaksByMailAddress(String emailAddress) {
-    final url =
-        '${Constants.baseUrl}/query?email=${Uri.encodeComponent(emailAddress)}';
+    final url = '$apiBaseUrl/query?email=${Uri.encodeComponent(emailAddress)}';
     return _getList<LeakModel>(url, (json) => LeakModel.fromJson(json));
   }
 
   Future<List<CustomerModel>> getCustomers() {
-    final url = '${Constants.baseUrl}/customers';
+    final url = '$apiBaseUrl/customers';
     return _getList<CustomerModel>(url, (json) => CustomerModel.fromJson(json));
   }
 
   Future<void> createCustomer(CreateCustomerModel model) {
-    final url = '${Constants.baseUrl}/customers';
+    final url = '$apiBaseUrl/customers';
     return _send('POST', url, body: model.toJson(), expectedStatus: 201);
   }
 
   Future<void> updateCustomer(String id, CustomerModel model) {
-    final url = '${Constants.baseUrl}/customers/$id';
+    final url = '$apiBaseUrl/customers/$id';
     return _send('PUT', url, body: model.toJson(), expectedStatus: 200);
   }
 
   Future<void> deleteCustomer(String id) {
-    final url = '${Constants.baseUrl}/customers/$id';
+    final url = '$apiBaseUrl/customers/$id';
     return _send('DELETE', url, expectedStatus: 204);
   }
 
   Future<List<LeakModel>> queryLeaksForCustomer(String customerId) {
-    final url = '${Constants.baseUrl}/customers/$customerId/query';
+    final url = '$apiBaseUrl/customers/$customerId/query';
     return _getList<LeakModel>(url, (json) => LeakModel.fromJson(json));
   }
 

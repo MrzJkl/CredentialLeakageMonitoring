@@ -32,7 +32,7 @@ namespace CredentialLeakageMonitoring.API.Services
             byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
             byte[] saltedPassword = new byte[salt.Length + passwordBytes.Length];
 
-            // Kombiniere Salt + Passwort (Salt vorne)
+            // Combine Salt + Passwort (Salt first)
             Buffer.BlockCopy(salt, 0, saltedPassword, 0, salt.Length);
             Buffer.BlockCopy(passwordBytes, 0, saltedPassword, salt.Length, passwordBytes.Length);
 
@@ -44,7 +44,6 @@ namespace CredentialLeakageMonitoring.API.Services
             return hash;
         }
         
-
         public byte[] GenerateRandomSalt()
         {
             byte[] salt = new byte[SaltLength];

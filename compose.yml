@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: credentialleakage_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: clm_user
+      POSTGRES_PASSWORD: clm_secret
+      POSTGRES_DB: clm_db
+    ports:
+      - "5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: ./API
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    container_name: credentialleakage_api
+    environment:
+      ConnectionStrings__Postgres: "Host=db;Port=5432;Database=clm_db;Username=clm_user;Password=clm_secret"
+    ports:
+      - "4567:8080"
+      - "4568:8081"
+    depends_on:
+      - db
+
+  web:
+    build:
+      context: ./WebApp
+      dockerfile: Dockerfile
+      args:
+        - API_URL=http://localhost:4567
+    restart: unless-stopped
+    container_name: credentialleakage_web
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+
+volumes:
+  db_data:

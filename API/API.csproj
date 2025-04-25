@@ -11,6 +11,7 @@
     <Product>Credential Leakage Monitoring API</Product>
     <AssemblyName>CredentialLeakageMonitoring.$(MSBuildProjectName)</AssemblyName>
     <RootNamespace>CredentialLeakageMonitoring.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+    <DockerfileContext>.</DockerfileContext>
   </PropertyGroup>
 
   <ItemGroup>
@@ -33,7 +34,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Helper\" />
     <Folder Include="Migrations\" />
   </ItemGroup>
 

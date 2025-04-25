@@ -1,81 +1,131 @@
 ﻿using CredentialLeakageMonitoring.API.ApiModels;
 using CredentialLeakageMonitoring.API.Database;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
 
 namespace CredentialLeakageMonitoring.API.Services
 {
+    /// <summary>
+    /// Provides methods to query for credential leaks by email or customer.
+    /// </summary>
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="QueryService"/> class.
+    /// </remarks>
+    /// <param name="dbContextFactory">The factory to create database contexts.</param>
+    /// <param name="cryptoService">The service for hashing emails.</param>
     public class QueryService(IDbContextFactory<ApplicationDbContext> dbContextFactory, CryptoService cryptoService)
     {
+        /// <summary>
+        /// Searches for leaks by the specified email address.
+        /// </summary>
+        /// <param name="eMail">The email address to search for.</param>
+        /// <returns>A list of leaks matching the email hash.</returns>
         public async Task<List<LeakModel>> SearchForLeaksByEmail(string eMail)
         {
             using var dbContext = await dbContextFactory.CreateDbContextAsync();
-            byte[] emailHash = cryptoService.HashEmail(eMail);
+            var emailHash = cryptoService.HashEmail(eMail);
 
-            List<DatabaseModels.Leak> leaks = await dbContext.Leaks
+            // Query leaks matching the hashed email.
+            var leaks = await dbContext.Leaks
+                .AsNoTracking()
                 .Where(l => l.EmailHash == emailHash)
+                .Select(l => new LeakModel
+                {
+                    Id = l.Id,
+                    EmailHash = Convert.ToBase64String(l.EmailHash),
+                    ObfuscatedPassword = l.ObfuscatedPassword,
+                    FirstSeen = l.FirstSeen,
+                    LastSeen = l.LastSeen,
+                    Domain = l.Domain,
+                    AssociatedCustomers = l.AssociatedCustomers
+                        .Select(c => new CustomerModel
+                        {
+                            Id = c.Id,
+                            Name = c.Name
+                        }).ToList()
+                })
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            return [.. leaks.Select(l => new LeakModel
-            {
-                Id = l.Id,
-                EmailHash = Convert.ToBase64String(l.EmailHash),
-                ObfuscatedPassword = l.ObfuscatedPassword,
-                FirstSeen = l.FirstSeen,
-                LastSeen = l.LastSeen,
-                Domain = l.Domain,
-                AssociatedCustomers = [.. l.AssociatedCustomers.Select(c => new CustomerModel
-                {
-                    Id = c.Id,
-                    Name = c.Name
-                })],
-            })];
+            return leaks;
         }
 
+        /// <summary>
+        /// Searches for leaks associated with the given customer ID.
+        /// Links the customer to found leaks if not already associated.
+        /// </summary>
+        /// <param name="customerId">The customer ID.</param>
+        /// <returns>A list of leaks associated with the customer's domains.</returns>
+        /// <exception cref="KeyNotFoundException">Thrown if the customer does not exist.</exception>
         public async Task<List<LeakModel>> SearchForLeaksByCustomerId(Guid customerId)
         {
             using var dbContext = await dbContextFactory.CreateDbContextAsync();
 
-            DatabaseModels.Customer customer = await dbContext.Customers
+            var customer = await dbContext.Customers
                 .Include(c => c.AssociatedDomains)
                 .SingleOrDefaultAsync(c => c.Id == customerId)
-                .ConfigureAwait(false) ?? throw new Exception($"Customer with ID {customerId} not found.");
+                .ConfigureAwait(false) ?? throw new KeyNotFoundException($"Customer with ID {customerId} not found.");
+            var domainNames = customer.AssociatedDomains.Select(d => d.DomainName).ToList();
 
-            List<string> domainNames = [.. customer.AssociatedDomains.Select(d => d.DomainName)];
-
-            List<DatabaseModels.Leak> leaks = await dbContext.Leaks
+            // Find leaks for the customer's domains.
+            var leaks = await dbContext.Leaks
                 .Include(l => l.AssociatedCustomers)
+                .AsNoTracking()
                 .Where(l => domainNames.Contains(l.Domain))
                 .OrderByDescending(l => l.FirstSeen)
+                .Select(l => new
+                {
+                    Leak = l,
+                    AlreadyAssociated = l.AssociatedCustomers.Any(c => c.Id == customerId)
+                })
                 .ToListAsync()
                 .ConfigureAwait(false);
 
-            foreach (DatabaseModels.Leak leak in leaks)
+            // Associate customer with leaks if not already linked.
+            var leaksToAssociate = leaks
+                .Where(x => !x.AlreadyAssociated)
+                .Select(x => x.Leak)
+                .ToList();
+
+            if (leaksToAssociate.Count != 0)
             {
-                if (!leak.AssociatedCustomers.Any(c => c.Id == customerId))
+                var trackedLeaks = await dbContext.Leaks
+                    .Where(l => leaksToAssociate.Select(lt => lt.Id).Contains(l.Id))
+                    .Include(l => l.AssociatedCustomers)
+                    .ToListAsync()
+                    .ConfigureAwait(false);
+
+                foreach (var leak in trackedLeaks)
                 {
                     leak.AssociatedCustomers.Add(customer);
-
-                    await dbContext.SaveChangesAsync();
                 }
+                await dbContext.SaveChangesAsync();
             }
 
-            return [.. leaks.Select(l => new LeakModel
-            {
-                Id = l.Id,
-                EmailHash = Convert.ToBase64String(l.EmailHash),
-                ObfuscatedPassword = l.ObfuscatedPassword,
-                FirstSeen = l.FirstSeen,
-                LastSeen = l.LastSeen,
-                Domain = l.Domain,
-                AssociatedCustomers = [.. l.AssociatedCustomers.Select(c => new CustomerModel
+            // Return all relevant leaks as DTOs.
+            var result = await dbContext.Leaks
+                .AsNoTracking()
+                .Where(l => domainNames.Contains(l.Domain))
+                .OrderByDescending(l => l.FirstSeen)
+                .Select(l => new LeakModel
                 {
-                    Id = c.Id,
-                    Name = c.Name,
-                    AssociatedDomains = [.. c.AssociatedDomains.Select(d => d.DomainName)],
-                })],
-            })];
+                    Id = l.Id,
+                    EmailHash = Convert.ToBase64String(l.EmailHash),
+                    ObfuscatedPassword = l.ObfuscatedPassword,
+                    FirstSeen = l.FirstSeen,
+                    LastSeen = l.LastSeen,
+                    Domain = l.Domain,
+                    AssociatedCustomers = l.AssociatedCustomers
+                        .Select(c => new CustomerModel
+                        {
+                            Id = c.Id,
+                            Name = c.Name,
+                            AssociatedDomains = c.AssociatedDomains.Select(d => d.DomainName).ToList()
+                        }).ToList()
+                })
+                .ToListAsync()
+                .ConfigureAwait(false);
+
+            return result;
         }
     }
 }
