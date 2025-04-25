@@ -12,9 +12,9 @@ class QueryScreen extends StatefulWidget {
 
 class _QueryScreenState extends State<QueryScreen> {
   final TextEditingController _emailController = TextEditingController();
-  List<LeakModel> _leaks = [];
-  bool _isLoading = false;
   bool _hasSearched = false;
+  bool _isLoading = false;
+  List<LeakModel> _leaks = [];
 
   Future<void> _checkEmailForLeaks() async {
     final email = _emailController.text.trim();

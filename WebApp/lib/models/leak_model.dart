@@ -5,14 +5,6 @@ part 'leak_model.g.dart';
 
 @JsonSerializable()
 class LeakModel {
-  final String id;
-  final String emailHash;
-  final String obfuscatedPassword;
-  final DateTime firstSeen;
-  final DateTime lastSeen;
-  final String domain;
-  final List<CustomerModel> associatedCustomers;
-
   LeakModel({
     required this.id,
     required this.emailHash,
@@ -25,6 +17,14 @@ class LeakModel {
 
   factory LeakModel.fromJson(Map<String, dynamic> json) =>
       _$LeakModelFromJson(json);
+
+  final List<CustomerModel> associatedCustomers;
+  final String domain;
+  final String emailHash;
+  final DateTime firstSeen;
+  final String id;
+  final DateTime lastSeen;
+  final String obfuscatedPassword;
 
   Map<String, dynamic> toJson() => _$LeakModelToJson(this);
 }

@@ -20,11 +20,11 @@ LeakModel _$LeakModelFromJson(Map<String, dynamic> json) => LeakModel(
 );
 
 Map<String, dynamic> _$LeakModelToJson(LeakModel instance) => <String, dynamic>{
-  'id': instance.id,
-  'emailHash': instance.emailHash,
-  'obfuscatedPassword': instance.obfuscatedPassword,
-  'firstSeen': instance.firstSeen.toIso8601String(),
-  'lastSeen': instance.lastSeen.toIso8601String(),
-  'domain': instance.domain,
   'associatedCustomers': instance.associatedCustomers,
+  'domain': instance.domain,
+  'emailHash': instance.emailHash,
+  'firstSeen': instance.firstSeen.toIso8601String(),
+  'id': instance.id,
+  'lastSeen': instance.lastSeen.toIso8601String(),
+  'obfuscatedPassword': instance.obfuscatedPassword,
 };

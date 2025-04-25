@@ -18,7 +18,7 @@ CustomerModel _$CustomerModelFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$CustomerModelToJson(CustomerModel instance) =>
     <String, dynamic>{
+      'associatedDomains': instance.associatedDomains,
       'id': instance.id,
       'name': instance.name,
-      'associatedDomains': instance.associatedDomains,
     };

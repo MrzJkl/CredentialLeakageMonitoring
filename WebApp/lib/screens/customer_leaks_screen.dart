@@ -3,14 +3,14 @@ import 'package:credential_leakage_monitoring/models/leak_model.dart';
 import 'package:credential_leakage_monitoring/services/api_service.dart';
 
 class CustomerLeaksScreen extends StatefulWidget {
-  final String customerId;
-  final String customerName;
-
   const CustomerLeaksScreen({
     super.key,
     required this.customerId,
     required this.customerName,
   });
+
+  final String customerId;
+  final String customerName;
 
   @override
   State<CustomerLeaksScreen> createState() => _CustomerLeaksScreenState();
@@ -50,9 +50,9 @@ class _CustomerLeaksScreenState extends State<CustomerLeaksScreen> {
 }
 
 class LeakPaginatedTable extends StatelessWidget {
-  final List<LeakModel> leaks;
-
   const LeakPaginatedTable({super.key, required this.leaks});
+
+  final List<LeakModel> leaks;
 
   @override
   Widget build(BuildContext context) {
@@ -75,9 +75,9 @@ class LeakPaginatedTable extends StatelessWidget {
 }
 
 class LeakDataSource extends DataTableSource {
-  final List<LeakModel> leaks;
-
   LeakDataSource(this.leaks);
+
+  final List<LeakModel> leaks;
 
   @override
   DataRow? getRow(int index) {
@@ -97,8 +97,10 @@ class LeakDataSource extends DataTableSource {
 
   @override
   bool get isRowCountApproximate => false;
+
   @override
   int get rowCount => leaks.length;
+
   @override
   int get selectedRowCount => 0;
 }
