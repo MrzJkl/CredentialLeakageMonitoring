@@ -1,4 +1,4 @@
-using CredentialLeakageMonitoring.API.ApiModels;
+﻿using CredentialLeakageMonitoring.API.ApiModels;
 using CredentialLeakageMonitoring.API.Database;
 using CredentialLeakageMonitoring.API.DatabaseModels;
 using CredentialLeakageMonitoring.API.Services;
@@ -7,7 +7,10 @@ using Serilog;
 using Serilog.Events;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
-
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.Limits.MaxRequestBodySize = 104857600; // z. B. 100 MB in Bytes
+});
 builder.Configuration.AddEnvironmentVariables();
 
 builder.Services.AddEndpointsApiExplorer();

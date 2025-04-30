@@ -4,19 +4,22 @@
     {
       "name": "WebApp (debug)",
       "request": "launch",
-      "type": "dart"
+      "type": "dart",
+      "args": ["--dart-define=API_URL=https://localhost:7125"]
     },
     {
       "name": "WebApp (profile mode)",
       "request": "launch",
       "type": "dart",
-      "flutterMode": "profile"
+      "flutterMode": "profile",
+      "args": ["--dart-define=API_URL=http://localhost"]
     },
     {
       "name": "WebApp (release mode)",
       "request": "launch",
       "type": "dart",
-      "flutterMode": "release"
+      "flutterMode": "release",
+      "args": ["--dart-define=API_URL=http://localhost"]
     }
   ]
 }

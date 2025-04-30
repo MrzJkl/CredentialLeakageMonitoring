@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace CredentialLeakageMonitoring.Migrations
+namespace CredentialLeakageMonitoring.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     partial class ApplicationDbContextModelSnapshot : ModelSnapshot
@@ -107,10 +107,8 @@ namespace CredentialLeakageMonitoring.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("bytea");
 
-                    b.Property<byte[]>("PasswordSalt")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("bytea");
+                    b.Property<Guid>("PasswordSaltId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -118,7 +116,25 @@ namespace CredentialLeakageMonitoring.Migrations
 
                     b.HasIndex("EmailHash");
 
+                    b.HasIndex("PasswordSaltId");
+
                     b.ToTable("Leaks");
+                });
+
+            modelBuilder.Entity("CredentialLeakageMonitoring.API.DatabaseModels.PasswordSalt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<byte[]>("Salt")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("bytea");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PasswordSalt");
                 });
 
             modelBuilder.Entity("CustomerDomain", b =>
@@ -149,6 +165,17 @@ namespace CredentialLeakageMonitoring.Migrations
                     b.HasIndex("AssociatedLeaksId");
 
                     b.ToTable("CustomerLeak");
+                });
+
+            modelBuilder.Entity("CredentialLeakageMonitoring.API.DatabaseModels.Leak", b =>
+                {
+                    b.HasOne("CredentialLeakageMonitoring.API.DatabaseModels.PasswordSalt", "PasswordSalt")
+                        .WithMany()
+                        .HasForeignKey("PasswordSaltId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PasswordSalt");
                 });
 
             modelBuilder.Entity("CustomerDomain", b =>

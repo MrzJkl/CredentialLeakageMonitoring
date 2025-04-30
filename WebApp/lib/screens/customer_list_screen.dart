@@ -179,7 +179,6 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                                       ApiService().getCustomers();
                                 }),
                               );
-                          ;
                         }
                       },
                     ),
@@ -192,8 +191,8 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => showCustomerDialog(),
-        child: const Icon(Icons.add),
         tooltip: 'Create new customer',
+        child: const Icon(Icons.add),
       ),
     );
   }

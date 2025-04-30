@@ -1,0 +1,1 @@
+docker run --name clm-test-db -e POSTGRES_PASSWORD=clm_password -e POSTGRES_USER=clm_user -p "5432:5432" -e POSTGRES_DB=clm_db -v ./postgres.conf:/etc/postgresql/postgresql.conf -v postgres-data:/var/lib/postgresql/data -d postgres -c 'config_file=/etc/postgresql/postgresql.conf'
