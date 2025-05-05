@@ -1,0 +1,1 @@
+docker run --shm-size="8g" --name clm-test-db -e POSTGRES_PASSWORD=clm_password -e POSTGRES_USER=clm_user -p 5432:5432 -e POSTGRES_DB=clm_db -d postgres -c max_connections=200 -c shared_buffers=1GB -c work_mem=16MB -c maintenance_work_mem=256MB

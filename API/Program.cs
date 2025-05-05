@@ -1,13 +1,15 @@
-using CredentialLeakageMonitoring.API.ApiModels;
+﻿using CredentialLeakageMonitoring.API.ApiModels;
 using CredentialLeakageMonitoring.API.Database;
-using CredentialLeakageMonitoring.API.DatabaseModels;
 using CredentialLeakageMonitoring.API.Services;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Events;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
-
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.Limits.MaxRequestBodySize = 104857600; // 100 MB
+});
 builder.Configuration.AddEnvironmentVariables();
 
 builder.Services.AddEndpointsApiExplorer();
@@ -59,9 +61,9 @@ app.UseCors(policy => policy
 
 app.UseHttpsRedirection();
 
-using (var scope = app.Services.CreateScope())
+using (IServiceScope scope = app.Services.CreateScope())
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    ApplicationDbContext dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     dbContext.Database.Migrate();
 }
 
