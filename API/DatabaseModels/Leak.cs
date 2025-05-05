@@ -17,23 +17,11 @@ namespace CredentialLeakageMonitoring.API.DatabaseModels
 
         [MaxLength(255)]
         [Required]
-        public string EMailAlgorithm { get; init; } = string.Empty;
-
-        [MaxLength(255)]
-        [Required]
         public string ObfuscatedPassword { get; init; } = string.Empty;
 
         [MaxLength(64)]
         [Required]
         public byte[] PasswordHash { get; init; } = [];
-
-        [MaxLength(255)]
-        [Required]
-        public string PasswordAlgorithmVersion { get; init; } = string.Empty;
-
-        [MaxLength(255)]
-        [Required]
-        public string PasswordAlgorithm { get; init; } = string.Empty;
 
         [MaxLength(255)]
         [Required]

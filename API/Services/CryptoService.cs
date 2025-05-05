@@ -8,11 +8,6 @@ namespace CredentialLeakageMonitoring.API.Services
     public class CryptoService()
     {
         private const int SaltLength = 16;
-        public static readonly string AlgorithmForPassword = nameof(SHA512);
-        public static readonly string AlgorithmForEmail = nameof(SHA512);
-        // Argon2 Version 1.3 (v=19) regarding:
-        // https://www.nuget.org/packages/Konscious.Security.Cryptography.Argon2
-        public static readonly string AlgorithmVersionForPassword = nameof(SHA512);
 
         public byte[] HashEmail(string email)
         {
@@ -27,7 +22,7 @@ namespace CredentialLeakageMonitoring.API.Services
             byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
             byte[] saltedPassword = new byte[salt.Length + passwordBytes.Length];
 
-            // Combine PasswordSalt + Passwort (PasswordSalt first)
+            // Combine Salt + Passwort (salt first)
             Buffer.BlockCopy(salt, 0, saltedPassword, 0, salt.Length);
             Buffer.BlockCopy(passwordBytes, 0, saltedPassword, salt.Length, passwordBytes.Length);
 

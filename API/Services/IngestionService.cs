@@ -3,6 +3,7 @@ using CredentialLeakageMonitoring.API.Database;
 using CredentialLeakageMonitoring.API.DatabaseModels;
 using CsvHelper;
 using CsvHelper.Configuration;
+using EFCore.BulkExtensions;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using System.Globalization;
@@ -17,7 +18,7 @@ namespace CredentialLeakageMonitoring.API.Services
     /// </remarks>
     public class IngestionService(IDbContextFactory<ApplicationDbContext> dbContextFactory, CryptoService cryptoService, ILogger<IngestionService> log)
     {
-        private const int MaxChunks = 30;
+        private const int MaxChunks = 20;
 
         /// <summary>
         /// Ingests leaks from a CSV stream in batches.
@@ -72,10 +73,11 @@ namespace CredentialLeakageMonitoring.API.Services
                 .ToList();
 
             sw.Stop();
-            log.LogInformation("Precomputation of hashes and domains took {Elapsed}", sw.Elapsed);
+            log.LogInformation("Precomputation of {Count} hashes and domains took {Elapsed}", emailHashes.Count, sw.Elapsed);
 
+            sw.Restart();
             // Load all existing leaks and domains for the chunk in advance.
-            var existingLeaks = await dbContext.Leaks
+            var existingAccounts = await dbContext.Leaks
                 .AsNoTracking()
                 .Include(l => l.PasswordSalt)
                 .Where(l => emailHashes.Contains(l.EmailHash))
@@ -87,12 +89,18 @@ namespace CredentialLeakageMonitoring.API.Services
                 .Where(d => domainNames.Contains(d.DomainName))
                 .ToListAsync();
 
+            sw.Stop();
+            log.LogInformation("Loading {Count} Database took {Elapsed}", existingAccounts.Count, sw.Elapsed);
+
             var newLeaks = new List<Leak>();
+            var leakToUpdateIds = new List<Guid>();
+
+            sw.Restart();
 
             foreach (var record in chunk)
             {
                 var emailHash = cryptoService.HashEmail(record.Email);
-                var leaksForEmail = existingLeaks
+                var leaksForEmail = existingAccounts
                     .Where(l => l.EmailHash.SequenceEqual(emailHash))
                     .ToList();
 
@@ -107,9 +115,7 @@ namespace CredentialLeakageMonitoring.API.Services
                     {
                         if (passwordHash.SequenceEqual(existingLeak.PasswordHash))
                         {
-                            // Update LastSeen for existing leak.
-                            existingLeak.LastSeen = DateTimeOffset.UtcNow;
-                            dbContext.Leaks.Update(existingLeak);
+                            leakToUpdateIds.Add(existingLeak.Id);
                             foundMatchingLeak = true;
                             break;
                         }
@@ -138,9 +144,7 @@ namespace CredentialLeakageMonitoring.API.Services
                     ObfuscatedPassword = Helper.ObfuscatePassword(record.PlaintextPassword),
                     PasswordHash = passwordHashWithSalt,
                     PasswordSalt = newSalt,
-                    PasswordAlgorithmVersion = CryptoService.AlgorithmVersionForPassword,
-                    PasswordAlgorithm = CryptoService.AlgorithmForPassword,
-                    EMailAlgorithm = CryptoService.AlgorithmForEmail,
+                    PasswordSaltId = newSalt.Id,
                     Domain = domainName,
                     AssociatedCustomers = customers,
                     FirstSeen = DateTimeOffset.UtcNow,
@@ -150,13 +154,30 @@ namespace CredentialLeakageMonitoring.API.Services
                 newLeaks.Add(newLeak);
             }
 
+            sw.Stop();
+            log.LogInformation("Processing took {Elapsed}", sw.Elapsed);
+
+            sw.Restart();
+            var now = DateTimeOffset.UtcNow;
+            await dbContext.Leaks
+                .Where(l => leakToUpdateIds.Contains(l.Id))
+                .ExecuteUpdateAsync(l => l
+                    .SetProperty(leak => leak.LastSeen, now));
+
+            sw.Stop();
+            log.LogInformation("Updating {Count} leaks took {Elapsed}", leakToUpdateIds.Count, sw.Elapsed);
+
+            sw.Restart();
             // Add all new leaks in one batch.
             if (newLeaks.Count > 0)
             {
-                dbContext.Leaks.AddRange(newLeaks);
+                await dbContext.BulkInsertAsync(newLeaks.Select(l => l.PasswordSalt));
+                await dbContext.BulkInsertAsync(newLeaks);
             }
 
-            await dbContext.SaveChangesAsync();
+            sw.Stop();
+            log.LogInformation("Inserting {Count} new leaks took {Elapsed}", newLeaks.Count, sw.Elapsed);
+
             await dbContext.DisposeAsync();
         }
     }
