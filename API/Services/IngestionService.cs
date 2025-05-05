@@ -107,18 +107,18 @@ namespace CredentialLeakageMonitoring.API.Services
 
                 if (leaksForEmail.Count != 0)
                 {
-                    //byte[] salt = leaksForEmail.First().PasswordSalt.Salt;
-                    //byte[] passwordHash = cryptoService.HashPassword(record.PlaintextPassword, salt);
+                    byte[] salt = leaksForEmail.First().PasswordSalt;
+                    byte[] passwordHash = cryptoService.HashPassword(record.PlaintextPassword, salt);
 
-                    //foreach (Leak? existingLeak in leaksForEmail)
-                    //{
-                    //    if (passwordHash.SequenceEqual(existingLeak.PasswordHash))
-                    //    {
-                    //        leakToUpdateIds.Add(existingLeak.Id);
-                    //        foundMatchingLeak = true;
-                    //        break;
-                    //    }
-                    //}
+                    foreach (Leak? existingLeak in leaksForEmail)
+                    {
+                        if (passwordHash.SequenceEqual(existingLeak.PasswordHash))
+                        {
+                            leakToUpdateIds.Add(existingLeak.Id);
+                            foundMatchingLeak = true;
+                            break;
+                        }
+                    }
                 }
 
                 if (foundMatchingLeak) continue;
@@ -135,6 +135,8 @@ namespace CredentialLeakageMonitoring.API.Services
                 {
                     Id = Guid.NewGuid(),
                     EmailHash = emailHash,
+                    PasswordHash = passwordHashWithSalt,
+                    PasswordSalt = saltValue,
                     Domain = domainName,
                     AssociatedCustomers = customers,
                     FirstSeen = DateTimeOffset.UtcNow,
