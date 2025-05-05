@@ -8,7 +8,7 @@
         public static IEnumerable<List<T>> Chunk<T>(this IEnumerable<T> source, int size)
         {
             List<T> chunk = new(size);
-            foreach (var item in source)
+            foreach (T? item in source)
             {
                 chunk.Add(item);
                 if (chunk.Count >= size)

@@ -27,28 +27,28 @@ namespace CredentialLeakageMonitoring.API.Services
         /// <param name="chunkSize">The batch size for processing.</param>
         public async Task IngestCsvAsync(Stream csvStream)
         {
-            var sw = Stopwatch.StartNew();
-            var records = new List<IngestionLeakModel>();
+            Stopwatch sw = Stopwatch.StartNew();
+            List<IngestionLeakModel> records = new();
 
             // Read all records from the CSV stream.
-            using var reader = new StreamReader(csvStream);
-            using var csv = new CsvReader(reader, new CsvConfiguration(CultureInfo.InvariantCulture)
+            using StreamReader reader = new(csvStream);
+            using CsvReader csv = new(reader, new CsvConfiguration(CultureInfo.InvariantCulture)
             {
                 Delimiter = ",",
                 HasHeaderRecord = false,
                 TrimOptions = TrimOptions.Trim,
             });
 
-            await foreach (var record in csv.GetRecordsAsync<IngestionLeakModel>())
+            await foreach (IngestionLeakModel record in csv.GetRecordsAsync<IngestionLeakModel>())
             {
                 records.Add(record);
             }
 
-            var chunkSize = records.Count / MaxChunks;
+            int chunkSize = records.Count / MaxChunks;
 
             // Process records in parallel chunks.
-            var chunks = records.Chunk(chunkSize);
-            var tasks = chunks.Select(chunk => ProcessChunkAsync(chunk));
+            IEnumerable<IngestionLeakModel[]> chunks = records.Chunk(chunkSize);
+            IEnumerable<Task> tasks = chunks.Select(chunk => ProcessChunkAsync(chunk));
             await Task.WhenAll(tasks);
 
             sw.Stop();
@@ -60,14 +60,14 @@ namespace CredentialLeakageMonitoring.API.Services
         /// </summary>
         private async Task ProcessChunkAsync(IEnumerable<IngestionLeakModel> chunk)
         {
-            await using var dbContext = dbContextFactory.CreateDbContext();
-            var sw = Stopwatch.StartNew();
+            await using ApplicationDbContext dbContext = dbContextFactory.CreateDbContext();
+            Stopwatch sw = Stopwatch.StartNew();
             // Precompute hashes and domains for all records in the chunk.
-            var emailHashes = chunk
+            List<byte[]> emailHashes = chunk
                 .AsParallel()
                 .Select(r => cryptoService.HashEmail(r.Email))
                 .ToList();
-            var domainNames = chunk
+            List<string> domainNames = chunk
                 .AsParallel()
                 .Select(r => Helper.GetDomainFromEmail(r.Email))
                 .ToList();
@@ -77,13 +77,12 @@ namespace CredentialLeakageMonitoring.API.Services
 
             sw.Restart();
             // Load all existing leaks and domains for the chunk in advance.
-            var existingAccounts = await dbContext.Leaks
+            List<Leak> existingAccounts = await dbContext.Leaks
                 .AsNoTracking()
-                .Include(l => l.PasswordSalt)
                 .Where(l => emailHashes.Contains(l.EmailHash))
                 .ToListAsync();
 
-            var domains = await dbContext.Domains
+            List<Domain> domains = await dbContext.Domains
                 .AsNoTracking()
                 .Include(d => d.AssociatedByCustomers)
                 .Where(d => domainNames.Contains(d.DomainName))
@@ -92,15 +91,15 @@ namespace CredentialLeakageMonitoring.API.Services
             sw.Stop();
             log.LogInformation("Loading {Count} Database took {Elapsed}", existingAccounts.Count, sw.Elapsed);
 
-            var newLeaks = new List<Leak>();
-            var leakToUpdateIds = new List<Guid>();
+            List<Leak> newLeaks = new();
+            List<Guid> leakToUpdateIds = new();
 
             sw.Restart();
 
-            foreach (var record in chunk)
+            foreach (IngestionLeakModel record in chunk)
             {
-                var emailHash = cryptoService.HashEmail(record.Email);
-                var leaksForEmail = existingAccounts
+                byte[] emailHash = cryptoService.HashEmail(record.Email);
+                List<Leak> leaksForEmail = existingAccounts
                     .Where(l => l.EmailHash.SequenceEqual(emailHash))
                     .ToList();
 
@@ -108,43 +107,34 @@ namespace CredentialLeakageMonitoring.API.Services
 
                 if (leaksForEmail.Count != 0)
                 {
-                    var salt = leaksForEmail.First().PasswordSalt.Salt;
-                    var passwordHash = cryptoService.HashPassword(record.PlaintextPassword, salt);
+                    //byte[] salt = leaksForEmail.First().PasswordSalt.Salt;
+                    //byte[] passwordHash = cryptoService.HashPassword(record.PlaintextPassword, salt);
 
-                    foreach (var existingLeak in leaksForEmail)
-                    {
-                        if (passwordHash.SequenceEqual(existingLeak.PasswordHash))
-                        {
-                            leakToUpdateIds.Add(existingLeak.Id);
-                            foundMatchingLeak = true;
-                            break;
-                        }
-                    }
+                    //foreach (Leak? existingLeak in leaksForEmail)
+                    //{
+                    //    if (passwordHash.SequenceEqual(existingLeak.PasswordHash))
+                    //    {
+                    //        leakToUpdateIds.Add(existingLeak.Id);
+                    //        foundMatchingLeak = true;
+                    //        break;
+                    //    }
+                    //}
                 }
 
                 if (foundMatchingLeak) continue;
 
                 // Prepare new leak for insertion.
-                var saltValue = cryptoService.GenerateRandomSalt();
-                var passwordHashWithSalt = cryptoService.HashPassword(record.PlaintextPassword, saltValue);
-                var domainName = Helper.GetDomainFromEmail(record.Email);
-                var domain = domains.SingleOrDefault(d => d.DomainName == domainName);
+                byte[] saltValue = cryptoService.GenerateRandomSalt();
+                byte[] passwordHashWithSalt = cryptoService.HashPassword(record.PlaintextPassword, saltValue);
+                string domainName = Helper.GetDomainFromEmail(record.Email);
+                Domain? domain = domains.SingleOrDefault(d => d.DomainName == domainName);
 
-                var customers = domain?.AssociatedByCustomers ?? [];
-                var newSalt = new PasswordSalt
-                { 
-                    Id = Guid.NewGuid(), 
-                    Salt = saltValue 
-                };
+                List<Customer> customers = domain?.AssociatedByCustomers ?? [];
 
-                var newLeak = new Leak
+                Leak newLeak = new()
                 {
                     Id = Guid.NewGuid(),
                     EmailHash = emailHash,
-                    ObfuscatedPassword = Helper.ObfuscatePassword(record.PlaintextPassword),
-                    PasswordHash = passwordHashWithSalt,
-                    PasswordSalt = newSalt,
-                    PasswordSaltId = newSalt.Id,
                     Domain = domainName,
                     AssociatedCustomers = customers,
                     FirstSeen = DateTimeOffset.UtcNow,
@@ -158,7 +148,7 @@ namespace CredentialLeakageMonitoring.API.Services
             log.LogInformation("Processing took {Elapsed}", sw.Elapsed);
 
             sw.Restart();
-            var now = DateTimeOffset.UtcNow;
+            DateTimeOffset now = DateTimeOffset.UtcNow;
             await dbContext.Leaks
                 .Where(l => leakToUpdateIds.Contains(l.Id))
                 .ExecuteUpdateAsync(l => l
@@ -171,7 +161,6 @@ namespace CredentialLeakageMonitoring.API.Services
             // Add all new leaks in one batch.
             if (newLeaks.Count > 0)
             {
-                await dbContext.BulkInsertAsync(newLeaks.Select(l => l.PasswordSalt));
                 await dbContext.BulkInsertAsync(newLeaks);
             }
 

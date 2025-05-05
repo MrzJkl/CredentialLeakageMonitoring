@@ -1,6 +1,4 @@
-﻿using Konscious.Security.Cryptography;
-using System.Diagnostics;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 
 namespace CredentialLeakageMonitoring.API.Services
@@ -30,7 +28,7 @@ namespace CredentialLeakageMonitoring.API.Services
 
             return hash;
         }
-        
+
         public byte[] GenerateRandomSalt()
         {
             byte[] salt = new byte[SaltLength];

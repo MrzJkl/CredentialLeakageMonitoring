@@ -21,11 +21,11 @@ namespace CredentialLeakageMonitoring.API.Services
         /// <returns>A list of leaks matching the email hash.</returns>
         public async Task<List<LeakModel>> SearchForLeaksByEmail(string eMail)
         {
-            using var dbContext = await dbContextFactory.CreateDbContextAsync();
-            var emailHash = cryptoService.HashEmail(eMail);
+            using ApplicationDbContext dbContext = await dbContextFactory.CreateDbContextAsync();
+            byte[] emailHash = cryptoService.HashEmail(eMail);
 
             // Query leaks matching the hashed email.
-            var leaks = await dbContext.Leaks
+            List<LeakModel> leaks = await dbContext.Leaks
                 .AsNoTracking()
                 .Where(l => l.EmailHash == emailHash)
                 .Select(l => new LeakModel
@@ -58,13 +58,13 @@ namespace CredentialLeakageMonitoring.API.Services
         /// <exception cref="KeyNotFoundException">Thrown if the customer does not exist.</exception>
         public async Task<List<LeakModel>> SearchForLeaksByCustomerId(Guid customerId)
         {
-            using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            using ApplicationDbContext dbContext = await dbContextFactory.CreateDbContextAsync();
 
-            var customer = await dbContext.Customers
+            DatabaseModels.Customer customer = await dbContext.Customers
                 .Include(c => c.AssociatedDomains)
                 .SingleOrDefaultAsync(c => c.Id == customerId)
                 .ConfigureAwait(false) ?? throw new KeyNotFoundException($"Customer with ID {customerId} not found.");
-            var domainNames = customer.AssociatedDomains.Select(d => d.DomainName).ToList();
+            List<string> domainNames = customer.AssociatedDomains.Select(d => d.DomainName).ToList();
 
             // Find leaks for the customer's domains.
             var leaks = await dbContext.Leaks
@@ -81,20 +81,20 @@ namespace CredentialLeakageMonitoring.API.Services
                 .ConfigureAwait(false);
 
             // Associate customer with leaks if not already linked.
-            var leaksToAssociate = leaks
+            List<DatabaseModels.Leak> leaksToAssociate = leaks
                 .Where(x => !x.AlreadyAssociated)
                 .Select(x => x.Leak)
                 .ToList();
 
             if (leaksToAssociate.Count != 0)
             {
-                var trackedLeaks = await dbContext.Leaks
+                List<DatabaseModels.Leak> trackedLeaks = await dbContext.Leaks
                     .Where(l => leaksToAssociate.Select(lt => lt.Id).Contains(l.Id))
                     .Include(l => l.AssociatedCustomers)
                     .ToListAsync()
                     .ConfigureAwait(false);
 
-                foreach (var leak in trackedLeaks)
+                foreach (DatabaseModels.Leak? leak in trackedLeaks)
                 {
                     leak.AssociatedCustomers.Add(customer);
                 }
@@ -102,7 +102,7 @@ namespace CredentialLeakageMonitoring.API.Services
             }
 
             // Return all relevant leaks as DTOs.
-            var result = await dbContext.Leaks
+            List<LeakModel> result = await dbContext.Leaks
                 .AsNoTracking()
                 .Where(l => domainNames.Contains(l.Domain))
                 .OrderByDescending(l => l.FirstSeen)

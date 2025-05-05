@@ -21,17 +21,17 @@ namespace CredentialLeakageMonitoring.API.Services
         /// <returns>The created customer as a DTO.</returns>
         public async Task<CustomerModel> CreateCustomer(CreateCustomerModel model)
         {
-            using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            using ApplicationDbContext dbContext = await dbContextFactory.CreateDbContextAsync();
 
             // Find existing domains by name.
-            var existingDomains = await dbContext.Domains
+            List<Domain> existingDomains = await dbContext.Domains
                 .Where(d => model.AssociatedDomains.Contains(d.DomainName))
                 .ToListAsync();
 
-            var existingDomainNames = existingDomains.Select(d => d.DomainName).ToHashSet();
+            HashSet<string> existingDomainNames = existingDomains.Select(d => d.DomainName).ToHashSet();
 
             // Prepare new domains that do not exist yet.
-            var newDomains = model.AssociatedDomains
+            List<Domain> newDomains = model.AssociatedDomains
                 .Where(dn => !existingDomainNames.Contains(dn))
                 .Select(dn => new Domain { DomainName = dn })
                 .ToList();
@@ -40,9 +40,9 @@ namespace CredentialLeakageMonitoring.API.Services
             await dbContext.SaveChangesAsync();
 
             // Combine all domains for association.
-            var allDomains = existingDomains.Concat(newDomains).ToList();
+            List<Domain> allDomains = existingDomains.Concat(newDomains).ToList();
 
-            var customer = new Customer
+            Customer customer = new()
             {
                 Id = Guid.NewGuid(),
                 Name = model.Name,
@@ -66,10 +66,10 @@ namespace CredentialLeakageMonitoring.API.Services
         /// <returns>A list of customer DTOs.</returns>
         public async Task<List<CustomerModel>> GetCustomers()
         {
-            using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            using ApplicationDbContext dbContext = await dbContextFactory.CreateDbContextAsync();
 
             // Use AsNoTracking for read-only query performance.
-            var customers = await dbContext.Customers
+            List<Customer> customers = await dbContext.Customers
                 .AsNoTracking()
                 .OrderBy(c => c.Name)
                 .Include(c => c.AssociatedDomains)
@@ -90,9 +90,9 @@ namespace CredentialLeakageMonitoring.API.Services
         /// <returns>The customer DTO, or null if not found.</returns>
         public async Task<CustomerModel?> GetCustomer(Guid id)
         {
-            using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            using ApplicationDbContext dbContext = await dbContextFactory.CreateDbContextAsync();
 
-            var customer = await dbContext.Customers
+            Customer? customer = await dbContext.Customers
                 .AsNoTracking()
                 .Include(c => c.AssociatedDomains)
                 .SingleOrDefaultAsync(c => c.Id == id);
@@ -118,25 +118,25 @@ namespace CredentialLeakageMonitoring.API.Services
         /// <exception cref="Exception">Thrown if the customer is not found.</exception>
         public async Task<CustomerModel> UpdateCustomer(CustomerModel customerModel)
         {
-            using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            using ApplicationDbContext dbContext = await dbContextFactory.CreateDbContextAsync();
 
-            var customer = await dbContext.Customers
+            Customer customer = await dbContext.Customers
                 .Include(c => c.AssociatedDomains)
                 .SingleOrDefaultAsync(c => c.Id == customerModel.Id)
                 ?? throw new Exception("Customer not found");
 
             customer.Name = customerModel.Name;
 
-            var domainNames = customerModel.AssociatedDomains.ToList();
+            List<string> domainNames = customerModel.AssociatedDomains.ToList();
 
             // Find and add new domains if necessary.
-            var existingDomains = await dbContext.Domains
+            List<Domain> existingDomains = await dbContext.Domains
                 .Where(d => domainNames.Contains(d.DomainName))
                 .ToListAsync();
 
-            var existingDomainNames = existingDomains.Select(d => d.DomainName).ToHashSet();
+            HashSet<string> existingDomainNames = existingDomains.Select(d => d.DomainName).ToHashSet();
 
-            var newDomains = domainNames
+            List<Domain> newDomains = domainNames
                 .Where(dn => !existingDomainNames.Contains(dn))
                 .Select(dn => new Domain { DomainName = dn })
                 .ToList();
@@ -144,7 +144,7 @@ namespace CredentialLeakageMonitoring.API.Services
             dbContext.Domains.AddRange(newDomains);
             await dbContext.SaveChangesAsync();
 
-            var allDomains = existingDomains.Concat(newDomains).ToList();
+            List<Domain> allDomains = existingDomains.Concat(newDomains).ToList();
 
             customer.AssociatedDomains = allDomains;
 
@@ -166,9 +166,9 @@ namespace CredentialLeakageMonitoring.API.Services
         /// <exception cref="Exception">Thrown if the customer is not found.</exception>
         public async Task DeleteCustomer(Guid id)
         {
-            using var dbContext = await dbContextFactory.CreateDbContextAsync();
+            using ApplicationDbContext dbContext = await dbContextFactory.CreateDbContextAsync();
 
-            var customer = await dbContext.Customers
+            Customer customer = await dbContext.Customers
                 .Include(c => c.AssociatedDomains)
                 .SingleOrDefaultAsync(c => c.Id == id)
                 ?? throw new KeyNotFoundException("Customer not found");

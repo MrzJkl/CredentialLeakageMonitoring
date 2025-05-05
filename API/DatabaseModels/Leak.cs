@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CredentialLeakageMonitoring.API.DatabaseModels
 {
@@ -15,13 +14,7 @@ namespace CredentialLeakageMonitoring.API.DatabaseModels
         [Required]
         public byte[] EmailHash { get; init; } = [];
 
-        [MaxLength(255)]
-        [Required]
-        public string ObfuscatedPassword { get; init; } = string.Empty;
-
-        [MaxLength(64)]
-        [Required]
-        public byte[] PasswordHash { get; init; } = [];
+        // Add Passwort related fields here
 
         [MaxLength(255)]
         [Required]
@@ -33,12 +26,6 @@ namespace CredentialLeakageMonitoring.API.DatabaseModels
         [Required]
         public DateTimeOffset LastSeen { get; set; }
 
-        [Required]
-        [ForeignKey(nameof(PasswordSalt))]
-        public Guid PasswordSaltId { get; set; }
-
         public virtual List<Customer> AssociatedCustomers { get; set; } = [];
-
-        public virtual PasswordSalt PasswordSalt { get; set; } = new();
     }
 }
