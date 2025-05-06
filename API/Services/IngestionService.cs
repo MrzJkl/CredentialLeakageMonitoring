@@ -143,8 +143,8 @@ namespace CredentialLeakageMonitoring.API.Services
                 if (foundMatchingLeak) continue;
 
                 // Prepare new leak for insertion.
-                byte[] saltValue = CryptoService.GenerateRandomSalt();
-                byte[] passwordHashWithSalt = CryptoService.HashPassword(record.PlaintextPassword, saltValue);
+                byte[] key = CryptoService.DeriveKey(record.Email, CryptoService.TestSecret);
+                byte[] passwordCipher = CryptoService.EncryptPassword(record.PlaintextPassword, key);
                 string domainName = emailInfos[record.Email].Domain;
                 Domain? domain = domains.SingleOrDefault(d => d.DomainName == domainName);
 
@@ -154,9 +154,8 @@ namespace CredentialLeakageMonitoring.API.Services
                 {
                     Id = Guid.NewGuid(),
                     EmailHash = emailHash,
-                    PasswordHash = passwordHashWithSalt,
-                    PasswordSalt = saltValue,
                     Domain = domainName,
+                    PasswordCipher = passwordCipher,
                     AssociatedCustomers = customers,
                     FirstSeen = DateTimeOffset.UtcNow,
                     LastSeen = DateTimeOffset.UtcNow

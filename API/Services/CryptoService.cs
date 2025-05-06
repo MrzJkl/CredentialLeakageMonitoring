@@ -9,6 +9,7 @@ namespace CredentialLeakageMonitoring.API.Services
     public static class CryptoService
     {
         private const int SaltLength = 16;
+        public const string TestSecret = "b6166cdf-2d18-4ab9-9425-6a0ce9561603";
 
         /// <summary>
         /// Thread safe
@@ -21,21 +22,26 @@ namespace CredentialLeakageMonitoring.API.Services
             return hash;
         }
 
-        /// <summary>
-        /// This method is thread-safe 
-        /// </summary>
-        public static byte[] HashPassword(string password, byte[] salt)
+        public byte[] EncryptPassword(string data, byte[] key)
         {
-            byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
-            byte[] saltedPassword = new byte[salt.Length + passwordBytes.Length];
+            using Aes aes = Aes.Create();
+            aes.Key = key;
+            aes.Mode = CipherMode.CBC;
+            aes.Padding = PaddingMode.PKCS7;
 
-            // Combine Salt + Passwort (salt first)
-            Buffer.BlockCopy(salt, 0, saltedPassword, 0, salt.Length);
-            Buffer.BlockCopy(passwordBytes, 0, saltedPassword, salt.Length, passwordBytes.Length);
+            aes.GenerateIV();
+            byte[] iv = aes.IV;
 
-            byte[] hash = SHA512.HashData(saltedPassword);
+            byte[] plainBytes = Encoding.UTF8.GetBytes(data);
 
-            return hash;
+            using ICryptoTransform encryptor = aes.CreateEncryptor();
+            byte[] encrypted = encryptor.TransformFinalBlock(plainBytes, 0, plainBytes.Length);
+
+            byte[] result = new byte[iv.Length + encrypted.Length];
+            Buffer.BlockCopy(iv, 0, result, 0, iv.Length);
+            Buffer.BlockCopy(encrypted, 0, result, iv.Length, encrypted.Length);
+
+            return result;
         }
 
         /// <summary>
@@ -47,6 +53,15 @@ namespace CredentialLeakageMonitoring.API.Services
             using RandomNumberGenerator rng = RandomNumberGenerator.Create();
             rng.GetBytes(salt);
             return salt;
+        }
+
+        public byte[] DeriveKey(string email, string secret)
+        {
+            string input = email.Trim().ToLowerInvariant() + ":" + secret;
+            byte[] inputBytes = Encoding.UTF8.GetBytes(input);
+            byte[] hash = SHA256.HashData(inputBytes);
+
+            return hash;
         }
     }
 }

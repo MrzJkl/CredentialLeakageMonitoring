@@ -15,12 +15,7 @@ namespace CredentialLeakageMonitoring.API.DatabaseModels
         public byte[] EmailHash { get; init; } = [];
 
         [Required]
-        [MaxLength(64)]
-        public byte[] PasswordHash { get; init; } = [];
-
-        [Required]
-        [MaxLength(16)]
-        public byte[] PasswordSalt { get; init; } = [];
+        public byte[] PasswordCipher { get; init; } = [];
 
         [MaxLength(255)]
         [Required]
