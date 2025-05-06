@@ -19,7 +19,7 @@ namespace CredentialLeakageMonitoring.API.Services
     /// </remarks>
     public class IngestionService(IDbContextFactory<ApplicationDbContext> dbContextFactory, ILogger<IngestionService> log)
     {
-        private const int MaxChunks = 100;
+        private const int MaxChunks = 30;
 
         /// <summary>
         /// Ingests leaks from a CSV stream in batches.
@@ -57,7 +57,7 @@ namespace CredentialLeakageMonitoring.API.Services
             await Task.WhenAll(tasks);
 
             sw.Stop();
-            log.LogInformation("Ingestion of {Count} leaks took {Elapsed}", records.Count, sw.Elapsed);
+            log.LogInformation("Ingestion of {Count} leaks took {Elapsed}", records.Count, sw.ElapsedMilliseconds);
         }
 
         /// <summary>
@@ -66,7 +66,7 @@ namespace CredentialLeakageMonitoring.API.Services
         private async Task ProcessChunkAsync(IEnumerable<IngestionLeakModel> chunk)
         {
             await using ApplicationDbContext dbContext = dbContextFactory.CreateDbContext();
-            Stopwatch sw = Stopwatch.StartNew();
+            //Stopwatch sw = Stopwatch.StartNew();
             // Precompute hashes and domains for all records in the chunk.
             Dictionary<string, (byte[] Hash, string Domain)> emailInfos = chunk
                 .AsParallel()
@@ -88,10 +88,10 @@ namespace CredentialLeakageMonitoring.API.Services
                 .Select(v => v.Domain)
                 .ToArray();
 
-            sw.Stop();
-            log.LogInformation("Precomputation of {Count} hashes and domains took {Elapsed}", emailInfos.Count, sw.Elapsed);
+            //sw.Stop();
+            //log.LogInformation("Precomputation of {Count} hashes and domains took {Elapsed}", emailInfos.Count, sw.Elapsed);
 
-            sw.Restart();
+            //sw.Restart();
             // Load all existing leaks and domains for the chunk in advance.
             List<Leak> existingAccounts = await dbContext.Leaks
                 .AsNoTracking()
@@ -104,13 +104,13 @@ namespace CredentialLeakageMonitoring.API.Services
                 .Where(d => domainNames.Contains(d.DomainName))
                 .ToListAsync();
 
-            sw.Stop();
-            log.LogInformation("Loading {Count} Database took {Elapsed}", existingAccounts.Count, sw.Elapsed);
+            //sw.Stop();
+            //log.LogInformation("Loading {Count} Database took {Elapsed}", existingAccounts.Count, sw.Elapsed);
 
             List<Leak> newLeaks = [];
             List<Guid> leaksToUpdateIds = [];
 
-            sw.Restart();
+            //sw.Restart();
 
             foreach (IngestionLeakModel record in chunk)
             {
@@ -162,28 +162,28 @@ namespace CredentialLeakageMonitoring.API.Services
                 newLeaks.Add(newLeak);
             }
 
-            sw.Stop();
-            log.LogInformation("Processing took {Elapsed}", sw.Elapsed);
+            //sw.Stop();
+            //log.LogInformation("Processing took {Elapsed}", sw.Elapsed);
 
-            sw.Restart();
+            //sw.Restart();
             DateTimeOffset now = DateTimeOffset.UtcNow;
             await dbContext.Leaks
                 .Where(l => leaksToUpdateIds.Contains(l.Id))
                 .ExecuteUpdateAsync(l => l
                     .SetProperty(leak => leak.LastSeen, now));
 
-            sw.Stop();
-            log.LogInformation("Updating {Count} leaks took {Elapsed}", leaksToUpdateIds.Count, sw.Elapsed);
+            //sw.Stop();
+            //log.LogInformation("Updating {Count} leaks took {Elapsed}", leaksToUpdateIds.Count, sw.Elapsed);
 
-            sw.Restart();
+            //sw.Restart();
             // Add all new leaks in one batch.
             if (newLeaks.Count > 0)
             {
                 await dbContext.BulkInsertAsync(newLeaks);
             }
 
-            sw.Stop();
-            log.LogInformation("Inserting {Count} new leaks took {Elapsed}", newLeaks.Count, sw.Elapsed);
+            //sw.Stop();
+            log.LogInformation("Inserting {Count} new leaks took {Milliseconds}", newLeaks.Count, sw.ElapsedMilliseconds);
 
             await dbContext.DisposeAsync();
         }
