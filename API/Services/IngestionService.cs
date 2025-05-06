@@ -7,6 +7,7 @@ using EFCore.BulkExtensions;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 
 namespace CredentialLeakageMonitoring.API.Services
 {
@@ -16,9 +17,9 @@ namespace CredentialLeakageMonitoring.API.Services
     /// <remarks>
     /// Initializes a new instance of the <see cref="IngestionService"/> class.
     /// </remarks>
-    public class IngestionService(IDbContextFactory<ApplicationDbContext> dbContextFactory, CryptoService cryptoService, ILogger<IngestionService> log)
+    public class IngestionService(IDbContextFactory<ApplicationDbContext> dbContextFactory, ILogger<IngestionService> log)
     {
-        private const int MaxChunks = 20;
+        private const int MaxChunks = 100;
 
         /// <summary>
         /// Ingests leaks from a CSV stream in batches.
@@ -44,6 +45,10 @@ namespace CredentialLeakageMonitoring.API.Services
                 records.Add(record);
             }
 
+            records = records
+                .Distinct()
+                .ToList();
+
             int chunkSize = records.Count / MaxChunks;
 
             // Process records in parallel chunks.
@@ -63,17 +68,28 @@ namespace CredentialLeakageMonitoring.API.Services
             await using ApplicationDbContext dbContext = dbContextFactory.CreateDbContext();
             Stopwatch sw = Stopwatch.StartNew();
             // Precompute hashes and domains for all records in the chunk.
-            List<byte[]> emailHashes = chunk
+            Dictionary<string, (byte[] Hash, string Domain)> emailInfos = chunk
                 .AsParallel()
-                .Select(r => cryptoService.HashEmail(r.Email))
-                .ToList();
-            List<string> domainNames = chunk
+                .DistinctBy(l => l.Email)
+                .ToDictionary(
+                    r => r.Email,
+                    r => (
+                        Hash: CryptoService.HashEmail(r.Email),
+                        Domain: Helper.GetDomainFromEmail(r.Email)
+                    )
+                );
+
+            var emailHashes = emailInfos.Values
                 .AsParallel()
-                .Select(r => Helper.GetDomainFromEmail(r.Email))
-                .ToList();
+                .Select(v => v.Hash)
+                .ToArray();
+            var domainNames = emailInfos.Values
+                .AsParallel()
+                .Select(v => v.Domain)
+                .ToArray();
 
             sw.Stop();
-            log.LogInformation("Precomputation of {Count} hashes and domains took {Elapsed}", emailHashes.Count, sw.Elapsed);
+            log.LogInformation("Precomputation of {Count} hashes and domains took {Elapsed}", emailInfos.Count, sw.Elapsed);
 
             sw.Restart();
             // Load all existing leaks and domains for the chunk in advance.
@@ -91,30 +107,30 @@ namespace CredentialLeakageMonitoring.API.Services
             sw.Stop();
             log.LogInformation("Loading {Count} Database took {Elapsed}", existingAccounts.Count, sw.Elapsed);
 
-            List<Leak> newLeaks = new();
-            List<Guid> leakToUpdateIds = new();
+            List<Leak> newLeaks = [];
+            List<Guid> leaksToUpdateIds = [];
 
             sw.Restart();
 
             foreach (IngestionLeakModel record in chunk)
             {
-                byte[] emailHash = cryptoService.HashEmail(record.Email);
-                List<Leak> leaksForEmail = existingAccounts
+                byte[] emailHash = emailInfos[record.Email].Hash;
+                var leaksForEmail = existingAccounts
                     .Where(l => l.EmailHash.SequenceEqual(emailHash))
                     .ToList();
-
                 bool foundMatchingLeak = false;
 
                 if (leaksForEmail.Count != 0)
                 {
-                    byte[] salt = leaksForEmail.First().PasswordSalt;
-                    byte[] passwordHash = cryptoService.HashPassword(record.PlaintextPassword, salt);
 
                     foreach (Leak? existingLeak in leaksForEmail)
                     {
+                        byte[] salt = existingLeak.PasswordSalt;
+                        byte[] passwordHash = CryptoService.HashPassword(record.PlaintextPassword, salt);
+
                         if (passwordHash.SequenceEqual(existingLeak.PasswordHash))
                         {
-                            leakToUpdateIds.Add(existingLeak.Id);
+                            leaksToUpdateIds.Add(existingLeak.Id);
                             foundMatchingLeak = true;
                             break;
                         }
@@ -124,9 +140,9 @@ namespace CredentialLeakageMonitoring.API.Services
                 if (foundMatchingLeak) continue;
 
                 // Prepare new leak for insertion.
-                byte[] saltValue = cryptoService.GenerateRandomSalt();
-                byte[] passwordHashWithSalt = cryptoService.HashPassword(record.PlaintextPassword, saltValue);
-                string domainName = Helper.GetDomainFromEmail(record.Email);
+                byte[] saltValue = CryptoService.GenerateRandomSalt();
+                byte[] passwordHashWithSalt = CryptoService.HashPassword(record.PlaintextPassword, saltValue);
+                string domainName = emailInfos[record.Email].Domain;
                 Domain? domain = domains.SingleOrDefault(d => d.DomainName == domainName);
 
                 List<Customer> customers = domain?.AssociatedByCustomers ?? [];
@@ -152,12 +168,12 @@ namespace CredentialLeakageMonitoring.API.Services
             sw.Restart();
             DateTimeOffset now = DateTimeOffset.UtcNow;
             await dbContext.Leaks
-                .Where(l => leakToUpdateIds.Contains(l.Id))
+                .Where(l => leaksToUpdateIds.Contains(l.Id))
                 .ExecuteUpdateAsync(l => l
                     .SetProperty(leak => leak.LastSeen, now));
 
             sw.Stop();
-            log.LogInformation("Updating {Count} leaks took {Elapsed}", leakToUpdateIds.Count, sw.Elapsed);
+            log.LogInformation("Updating {Count} leaks took {Elapsed}", leaksToUpdateIds.Count, sw.Elapsed);
 
             sw.Restart();
             // Add all new leaks in one batch.

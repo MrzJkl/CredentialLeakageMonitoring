@@ -46,7 +46,6 @@ string? connectionString = builder.Configuration.GetConnectionString("Postgres")
 builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
 builder.Services.AddScoped<IngestionService>();
-builder.Services.AddScoped<CryptoService>();
 builder.Services.AddScoped<QueryService>();
 builder.Services.AddScoped<CustomerService>();
 

@@ -3,11 +3,17 @@ using System.Text;
 
 namespace CredentialLeakageMonitoring.API.Services
 {
-    public class CryptoService()
+    /// <summary>
+    /// This class is thread-safe because it does not use shared (mutable) fields or instance variables.
+    /// </summary>
+    public static class CryptoService
     {
         private const int SaltLength = 16;
 
-        public byte[] HashEmail(string email)
+        /// <summary>
+        /// Thread safe
+        /// </summary>
+        public static byte[] HashEmail(string email)
         {
             email = email.Trim().ToLowerInvariant();
             byte[] inputBytes = Encoding.UTF8.GetBytes(email);
@@ -15,7 +21,10 @@ namespace CredentialLeakageMonitoring.API.Services
             return hash;
         }
 
-        public byte[] HashPassword(string password, byte[] salt)
+        /// <summary>
+        /// This method is thread-safe 
+        /// </summary>
+        public static byte[] HashPassword(string password, byte[] salt)
         {
             byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
             byte[] saltedPassword = new byte[salt.Length + passwordBytes.Length];
@@ -29,7 +38,10 @@ namespace CredentialLeakageMonitoring.API.Services
             return hash;
         }
 
-        public byte[] GenerateRandomSalt()
+        /// <summary>
+        /// Thread safe
+        /// </summary>
+        public static byte[] GenerateRandomSalt()
         {
             byte[] salt = new byte[SaltLength];
             using RandomNumberGenerator rng = RandomNumberGenerator.Create();
