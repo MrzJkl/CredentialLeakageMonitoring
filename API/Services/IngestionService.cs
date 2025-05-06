@@ -183,7 +183,7 @@ namespace CredentialLeakageMonitoring.API.Services
             }
 
             //sw.Stop();
-            log.LogInformation("Inserting {Count} new leaks took {Milliseconds}", newLeaks.Count, sw.ElapsedMilliseconds);
+            //log.LogInformation("Inserting {Count} new leaks took {Milliseconds}", newLeaks.Count, sw.ElapsedMilliseconds);
 
             await dbContext.DisposeAsync();
         }
