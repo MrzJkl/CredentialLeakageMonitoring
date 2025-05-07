@@ -147,6 +147,7 @@ namespace CredentialLeakageMonitoring.API.Services
                 byte[] passwordCipher = CryptoService.EncryptPassword(record.PlaintextPassword, key);
                 string domainName = emailInfos[record.Email].Domain;
                 Domain? domain = domains.SingleOrDefault(d => d.DomainName == domainName);
+                byte[] passwordCipher = CryptoService.EncryptPassword(record.PlaintextPassword, key);
 
                 List<Customer> customers = domain?.AssociatedByCustomers ?? [];
 
@@ -154,8 +155,8 @@ namespace CredentialLeakageMonitoring.API.Services
                 {
                     Id = Guid.NewGuid(),
                     EmailHash = emailHash,
-                    Domain = domainName,
                     PasswordCipher = passwordCipher,
+                    Domain = domainName,
                     AssociatedCustomers = customers,
                     FirstSeen = DateTimeOffset.UtcNow,
                     LastSeen = DateTimeOffset.UtcNow

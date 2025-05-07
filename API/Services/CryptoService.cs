@@ -8,7 +8,6 @@ namespace CredentialLeakageMonitoring.API.Services
     /// </summary>
     public static class CryptoService
     {
-        private const int SaltLength = 16;
         public const string TestSecret = "b6166cdf-2d18-4ab9-9425-6a0ce9561603";
 
         /// <summary>
@@ -18,28 +17,54 @@ namespace CredentialLeakageMonitoring.API.Services
         {
             email = email.Trim().ToLowerInvariant();
             byte[] inputBytes = Encoding.UTF8.GetBytes(email);
-            byte[] hash = SHA512.HashData(inputBytes);
+            byte[] hash = SHA256.HashData(inputBytes);
             return hash;
         }
 
-        public byte[] EncryptPassword(string data, byte[] key)
+        public static bool ArePasswordsEqual(byte[] passwordCipher, string plaintextPassword, byte[] key)
+        {
+            string decryptedPassword = DecryptPassword(passwordCipher, key);
+            return string.Equals(decryptedPassword, plaintextPassword, StringComparison.Ordinal);
+        }
+
+        public static string DecryptPassword(byte[] cipherData, byte[] key)
         {
             using Aes aes = Aes.Create();
             aes.Key = key;
             aes.Mode = CipherMode.CBC;
             aes.Padding = PaddingMode.PKCS7;
 
+            byte[] iv = new byte[16];
+            Buffer.BlockCopy(cipherData, 0, iv, 0, iv.Length);
+            aes.IV = iv;
+
+            int cipherTextLength = cipherData.Length - iv.Length;
+            byte[] cipherText = new byte[cipherTextLength];
+            Buffer.BlockCopy(cipherData, iv.Length, cipherText, 0, cipherTextLength);
+
+            using ICryptoTransform decryptor = aes.CreateDecryptor();
+            byte[] decryptedBytes = decryptor.TransformFinalBlock(cipherText, 0, cipherText.Length);
+
+            return Encoding.UTF8.GetString(decryptedBytes);
+        }
+
+        public static byte[] EncryptPassword(string data, byte[] key)
+        {
+            using Aes aes = Aes.Create();
+        
             aes.GenerateIV();
-            byte[] iv = aes.IV;
+            aes.Key = key;
+            aes.Mode = CipherMode.CBC;
+            aes.Padding = PaddingMode.PKCS7;
 
             byte[] plainBytes = Encoding.UTF8.GetBytes(data);
 
             using ICryptoTransform encryptor = aes.CreateEncryptor();
             byte[] encrypted = encryptor.TransformFinalBlock(plainBytes, 0, plainBytes.Length);
 
-            byte[] result = new byte[iv.Length + encrypted.Length];
-            Buffer.BlockCopy(iv, 0, result, 0, iv.Length);
-            Buffer.BlockCopy(encrypted, 0, result, iv.Length, encrypted.Length);
+            byte[] result = new byte[aes.IV.Length + encrypted.Length];
+            Buffer.BlockCopy(aes.IV, 0, result, 0, aes.IV.Length);
+            Buffer.BlockCopy(encrypted, 0, result, aes.IV.Length, encrypted.Length);
 
             return result;
         }
