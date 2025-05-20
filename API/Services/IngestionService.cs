@@ -7,7 +7,6 @@ using EFCore.BulkExtensions;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using System.Globalization;
-using System.Linq;
 
 namespace CredentialLeakageMonitoring.API.Services
 {
@@ -55,7 +54,6 @@ namespace CredentialLeakageMonitoring.API.Services
             IEnumerable<IngestionLeakModel[]> chunks = records.Chunk(chunkSize);
             IEnumerable<Task> tasks = chunks.Select(chunk => ProcessChunkAsync(chunk));
             await Task.WhenAll(tasks);
-
             sw.Stop();
             log.LogInformation("Ingestion of {Count} leaks took {Elapsed}", records.Count, sw.ElapsedMilliseconds);
         }
@@ -66,7 +64,9 @@ namespace CredentialLeakageMonitoring.API.Services
         private async Task ProcessChunkAsync(IEnumerable<IngestionLeakModel> chunk)
         {
             await using ApplicationDbContext dbContext = dbContextFactory.CreateDbContext();
+#if DEBUG
             Stopwatch sw = Stopwatch.StartNew();
+#endif
             // Precompute hashes and domains for all records in the chunk.
             Dictionary<string, (byte[] Hash, string Domain)> emailInfos = chunk
                 .AsParallel()
@@ -79,19 +79,21 @@ namespace CredentialLeakageMonitoring.API.Services
                     )
                 );
 
-            var emailHashes = emailInfos.Values
+            byte[][] emailHashes = emailInfos.Values
                 .AsParallel()
                 .Select(v => v.Hash)
                 .ToArray();
-            var domainNames = emailInfos.Values
+            string[] domainNames = emailInfos.Values
                 .AsParallel()
                 .Select(v => v.Domain)
                 .ToArray();
 
+#if DEBUG
             sw.Stop();
             log.LogInformation("Precomputation of {Count} hashes and domains took {Elapsed}", emailInfos.Count, sw.Elapsed);
 
             sw.Restart();
+#endif
             // Load all existing leaks and domains for the chunk in advance.
             List<Leak> existingAccounts = await dbContext.Leaks
                 .AsNoTracking()
@@ -104,18 +106,18 @@ namespace CredentialLeakageMonitoring.API.Services
                 .Where(d => domainNames.Contains(d.DomainName))
                 .ToListAsync();
 
+#if DEBUG
             sw.Stop();
             log.LogInformation("Loading {Count} Database took {Elapsed}", existingAccounts.Count, sw.Elapsed);
-
+            sw.Restart();
+#endif
             List<Leak> newLeaks = [];
             List<Guid> leaksToUpdateIds = [];
-
-            sw.Restart();
 
             foreach (IngestionLeakModel record in chunk)
             {
                 byte[] emailHash = emailInfos[record.Email].Hash;
-                var leaksForEmail = existingAccounts
+                List<Leak> leaksForEmail = existingAccounts
                     .Where(l => l.EmailHash.SequenceEqual(emailHash))
                     .ToList();
                 bool foundMatchingLeak = false;
@@ -161,30 +163,34 @@ namespace CredentialLeakageMonitoring.API.Services
 
                 newLeaks.Add(newLeak);
             }
-
+#if DEBUG
             sw.Stop();
             log.LogInformation("Processing took {Elapsed}", sw.Elapsed);
-
             sw.Restart();
+#endif
+
             DateTimeOffset now = DateTimeOffset.UtcNow;
             await dbContext.Leaks
                 .Where(l => leaksToUpdateIds.Contains(l.Id))
                 .ExecuteUpdateAsync(l => l
                     .SetProperty(leak => leak.LastSeen, now));
 
+#if DEBUG
             sw.Stop();
             log.LogInformation("Updating {Count} leaks took {Elapsed}", leaksToUpdateIds.Count, sw.Elapsed);
-
             sw.Restart();
+#endif
+
             // Add all new leaks in one batch.
             if (newLeaks.Count > 0)
             {
                 await dbContext.BulkInsertAsync(newLeaks);
             }
 
+#if DEBUG
             sw.Stop();
             log.LogInformation("Inserting {Count} new leaks took {Milliseconds}", newLeaks.Count, sw.ElapsedMilliseconds);
-
+#endif
             await dbContext.DisposeAsync();
         }
     }
