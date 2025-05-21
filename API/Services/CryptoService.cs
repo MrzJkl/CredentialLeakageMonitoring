@@ -17,7 +17,7 @@ namespace CredentialLeakageMonitoring.API.Services
         {
             email = email.Trim().ToLowerInvariant();
             byte[] inputBytes = Encoding.UTF8.GetBytes(email);
-            byte[] hash = SHA512.HashData(inputBytes);
+            byte[] hash = SHA384.HashData(inputBytes);
             return hash;
         }
 
@@ -33,7 +33,7 @@ namespace CredentialLeakageMonitoring.API.Services
             Buffer.BlockCopy(salt, 0, saltedPassword, 0, salt.Length);
             Buffer.BlockCopy(passwordBytes, 0, saltedPassword, salt.Length, passwordBytes.Length);
 
-            byte[] hash = SHA512.HashData(saltedPassword);
+            byte[] hash = SHA384.HashData(saltedPassword);
 
             return hash;
         }
