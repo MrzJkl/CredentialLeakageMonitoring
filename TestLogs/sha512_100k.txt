@@ -48,3 +48,24 @@
 [15:34:29 INF] Setting HTTP status code 204.
 [15:34:29 INF] Executed endpoint 'HTTP: POST /ingest'
 [15:34:29 INF] Request finished HTTP/2 POST https://localhost:7125/ingest - 204 null null 1654.7317ms
+[15:50:23 INF] Request starting HTTP/2 POST https://localhost:7125/ingest - multipart/form-data; boundary=----geckoformboundarye3fbbb10cf1d18b59423e9209377f447 3995698
+[15:50:23 INF] CORS policy execution successful.
+[15:50:23 INF] Executing endpoint 'HTTP: POST /ingest'
+[15:50:25 INF] Ingestion of 100000 leaks took 1275
+[15:50:25 INF] Setting HTTP status code 204.
+[15:50:25 INF] Executed endpoint 'HTTP: POST /ingest'
+[15:50:25 INF] Request finished HTTP/2 POST https://localhost:7125/ingest - 204 null null 1316.213ms
+[15:50:26 INF] Request starting HTTP/2 POST https://localhost:7125/ingest - multipart/form-data; boundary=----geckoformboundary5244b689e539947c65002cf2dcce9adb 3995698
+[15:50:26 INF] CORS policy execution successful.
+[15:50:26 INF] Executing endpoint 'HTTP: POST /ingest'
+[15:50:27 INF] Ingestion of 100000 leaks took 1255
+[15:50:27 INF] Setting HTTP status code 204.
+[15:50:27 INF] Executed endpoint 'HTTP: POST /ingest'
+[15:50:27 INF] Request finished HTTP/2 POST https://localhost:7125/ingest - 204 null null 1289.2077ms
+[15:50:28 INF] Request starting HTTP/2 POST https://localhost:7125/ingest - multipart/form-data; boundary=----geckoformboundary9243767930b702f43dc496b5d4d3ae84 3995698
+[15:50:28 INF] CORS policy execution successful.
+[15:50:28 INF] Executing endpoint 'HTTP: POST /ingest'
+[15:50:29 INF] Ingestion of 100000 leaks took 875
+[15:50:29 INF] Setting HTTP status code 204.
+[15:50:29 INF] Executed endpoint 'HTTP: POST /ingest'
+[15:50:29 INF] Request finished HTTP/2 POST https://localhost:7125/ingest - 204 null null 909.0275ms
