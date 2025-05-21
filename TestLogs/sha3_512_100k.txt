@@ -1,0 +1,71 @@
+[15:42:21 INF] Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+[15:42:21 INF] No migrations were applied. The database is already up to date.
+[15:42:21 INF] Now listening on: https://localhost:7125
+[15:42:21 INF] Now listening on: http://localhost:5131
+[15:42:21 INF] No action descriptors found. This may indicate an incorrectly configured application or missing application parts. To learn more, visit https://aka.ms/aspnet/mvc/app-parts
+[15:42:21 INF] Application started. Press Ctrl+C to shut down.
+[15:42:21 INF] Hosting environment: Development
+[15:42:21 INF] Content root path: C:\Users\Moritz Joekel\source\repos\CredentialLeakageMonitoring\API
+[15:42:22 INF] Request starting HTTP/2 GET https://localhost:7125/swagger/index.html - null null
+[15:42:22 INF] Request finished HTTP/2 GET https://localhost:7125/swagger/index.html - 200 null text/html;charset=utf-8 186.984ms
+[15:42:22 INF] Request starting HTTP/2 GET https://localhost:7125/_framework/aspnetcore-browser-refresh.js - null null
+[15:42:22 INF] Request starting HTTP/2 GET https://localhost:7125/swagger/swagger-ui.css - null null
+[15:42:22 INF] Request finished HTTP/2 GET https://localhost:7125/_framework/aspnetcore-browser-refresh.js - 200 16491 application/javascript; charset=utf-8 6.7314ms
+[15:42:22 INF] Request starting HTTP/2 GET https://localhost:7125/_vs/browserLink - null null
+[15:42:22 INF] Sending file. Request path: '/swagger-ui.css'. Physical path: 'N/A'
+[15:42:22 INF] Request finished HTTP/2 GET https://localhost:7125/swagger/swagger-ui.css - 499 152034 text/css 155.4871ms
+[15:42:22 INF] Request finished HTTP/2 GET https://localhost:7125/_vs/browserLink - 200 null text/javascript; charset=UTF-8 133.1363ms
+[15:42:22 INF] Request starting HTTP/2 GET https://localhost:7125/swagger/favicon-16x16.png - null null
+[15:42:22 INF] Sending file. Request path: '/favicon-16x16.png'. Physical path: 'N/A'
+[15:42:22 INF] Request finished HTTP/2 GET https://localhost:7125/swagger/favicon-16x16.png - 499 665 image/png 57.1729ms
+[15:42:22 INF] Request starting HTTP/2 GET https://localhost:7125/swagger/v1/swagger.json - null null
+[15:42:22 INF] Request finished HTTP/2 GET https://localhost:7125/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 19.4307ms
+[15:44:27 INF] Request starting HTTP/2 POST https://localhost:7125/ingest - multipart/form-data; boundary=----geckoformboundary3ff3a6b6f4de52bdaea8bb4a48965daa 3995698
+[15:44:27 INF] CORS policy execution successful.
+[15:44:27 INF] Executing endpoint 'HTTP: POST /ingest'
+[15:44:29 INF] Ingestion of 100000 leaks took 2643
+[15:44:29 INF] Setting HTTP status code 204.
+[15:44:29 INF] Executed endpoint 'HTTP: POST /ingest'
+[15:44:29 INF] Request finished HTTP/2 POST https://localhost:7125/ingest - 204 null null 2787.8952ms
+[15:44:36 INF] Request starting HTTP/2 POST https://localhost:7125/ingest - multipart/form-data; boundary=----geckoformboundaryc1584e8def5e4b9e1e3585245e4f656c 3995698
+[15:44:36 INF] CORS policy execution successful.
+[15:44:36 INF] Executing endpoint 'HTTP: POST /ingest'
+[15:44:38 INF] Ingestion of 100000 leaks took 1545
+[15:44:38 INF] Setting HTTP status code 204.
+[15:44:38 INF] Executed endpoint 'HTTP: POST /ingest'
+[15:44:38 INF] Request finished HTTP/2 POST https://localhost:7125/ingest - 204 null null 1600.5524ms
+[15:44:45 INF] Request starting HTTP/2 POST https://localhost:7125/ingest - multipart/form-data; boundary=----geckoformboundary8fc52a8b25fb30ce684b4831568de413 3995698
+[15:44:45 INF] CORS policy execution successful.
+[15:44:45 INF] Executing endpoint 'HTTP: POST /ingest'
+[15:44:46 INF] Ingestion of 100000 leaks took 1139
+[15:44:46 INF] Setting HTTP status code 204.
+[15:44:46 INF] Executed endpoint 'HTTP: POST /ingest'
+[15:44:46 INF] Request finished HTTP/2 POST https://localhost:7125/ingest - 204 null null 1190.8692ms
+[15:44:54 INF] Request starting HTTP/2 POST https://localhost:7125/ingest - multipart/form-data; boundary=----geckoformboundary5abd031dd3438cc4269c538d41b62851 3995698
+[15:44:54 INF] CORS policy execution successful.
+[15:44:54 INF] Executing endpoint 'HTTP: POST /ingest'
+[15:44:55 INF] Ingestion of 100000 leaks took 992
+[15:44:55 INF] Setting HTTP status code 204.
+[15:44:55 INF] Executed endpoint 'HTTP: POST /ingest'
+[15:44:55 INF] Request finished HTTP/2 POST https://localhost:7125/ingest - 204 null null 1032.4592ms
+[15:47:56 INF] Request starting HTTP/2 POST https://localhost:7125/ingest - multipart/form-data; boundary=----geckoformboundary1946f9b35d0a089931aaf0d7ac83ef4f 3995698
+[15:47:56 INF] CORS policy execution successful.
+[15:47:56 INF] Executing endpoint 'HTTP: POST /ingest'
+[15:47:57 INF] Ingestion of 100000 leaks took 1379
+[15:47:57 INF] Setting HTTP status code 204.
+[15:47:57 INF] Executed endpoint 'HTTP: POST /ingest'
+[15:47:57 INF] Request finished HTTP/2 POST https://localhost:7125/ingest - 204 null null 1465.667ms
+[15:47:59 INF] Request starting HTTP/2 POST https://localhost:7125/ingest - multipart/form-data; boundary=----geckoformboundary52adf825d9582edd43c15a926da2a1da 3995698
+[15:47:59 INF] CORS policy execution successful.
+[15:47:59 INF] Executing endpoint 'HTTP: POST /ingest'
+[15:48:01 INF] Ingestion of 100000 leaks took 1162
+[15:48:01 INF] Setting HTTP status code 204.
+[15:48:01 INF] Executed endpoint 'HTTP: POST /ingest'
+[15:48:01 INF] Request finished HTTP/2 POST https://localhost:7125/ingest - 204 null null 1198.1018ms
+[15:48:02 INF] Request starting HTTP/2 POST https://localhost:7125/ingest - multipart/form-data; boundary=----geckoformboundary4aacecc039cdfb51b2f3a11b2bbd3479 3995698
+[15:48:02 INF] CORS policy execution successful.
+[15:48:02 INF] Executing endpoint 'HTTP: POST /ingest'
+[15:48:03 INF] Ingestion of 100000 leaks took 903
+[15:48:03 INF] Setting HTTP status code 204.
+[15:48:03 INF] Executed endpoint 'HTTP: POST /ingest'
+[15:48:03 INF] Request finished HTTP/2 POST https://localhost:7125/ingest - 204 null null 940.4841ms
