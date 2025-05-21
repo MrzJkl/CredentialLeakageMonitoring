@@ -1,4 +1,4 @@
-﻿namespace CredentialLeakageMonitoring.API.Services
+﻿namespace CredentialLeakageMonitoring.API
 {
     public class FastByteArrayComparer : IEqualityComparer<byte[]>
     {
