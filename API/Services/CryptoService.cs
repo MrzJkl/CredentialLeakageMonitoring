@@ -51,7 +51,7 @@ namespace CredentialLeakageMonitoring.API.Services
         public static byte[] EncryptPassword(string data, byte[] key)
         {
             using Aes aes = Aes.Create();
-        
+
             aes.GenerateIV();
             aes.Key = key;
             aes.Mode = CipherMode.CBC;
@@ -69,18 +69,7 @@ namespace CredentialLeakageMonitoring.API.Services
             return result;
         }
 
-        /// <summary>
-        /// Thread safe
-        /// </summary>
-        public static byte[] GenerateRandomSalt()
-        {
-            byte[] salt = new byte[SaltLength];
-            using RandomNumberGenerator rng = RandomNumberGenerator.Create();
-            rng.GetBytes(salt);
-            return salt;
-        }
-
-        public byte[] DeriveKey(string email, string secret)
+        public static byte[] DeriveKey(string email, string secret)
         {
             string input = email.Trim().ToLowerInvariant() + ":" + secret;
             byte[] inputBytes = Encoding.UTF8.GetBytes(input);

@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CredentialLeakageMonitoring.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250505150125_InitialCreate")]
+    [Migration("20250521143044_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -85,14 +85,8 @@ namespace CredentialLeakageMonitoring.API.Migrations
                     b.Property<DateTimeOffset>("LastSeen")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<byte[]>("PasswordHash")
+                    b.Property<byte[]>("PasswordCipher")
                         .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("bytea");
-
-                    b.Property<byte[]>("PasswordSalt")
-                        .IsRequired()
-                        .HasMaxLength(16)
                         .HasColumnType("bytea");
 
                     b.HasKey("Id");

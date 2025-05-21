@@ -84,7 +84,6 @@ namespace CredentialLeakageMonitoring.API.Migrations
 
                     b.Property<byte[]>("PasswordCipher")
                         .IsRequired()
-                        .HasMaxLength(16)
                         .HasColumnType("bytea");
 
                     b.HasKey("Id");

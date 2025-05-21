@@ -111,7 +111,7 @@ namespace CredentialLeakageMonitoring.API.Services
 
 #if DEBUG
             sw.Stop();
-            log.LogInformation("Loading {Count} Database took {Elapsed}", existingAccounts.Count, sw.Elapsed);
+            log.LogInformation("Loading {Count} Database took {Elapsed}", leaks.Count, sw.Elapsed);
             sw.Restart();
 #endif
             List<Leak> newLeaks = [];
@@ -128,10 +128,7 @@ namespace CredentialLeakageMonitoring.API.Services
 
                     foreach (Leak? existingLeak in leaksForEmail)
                     {
-                        byte[] salt = existingLeak.PasswordSalt;
-                        byte[] passwordHash = CryptoService.HashPassword(record.PlaintextPassword, salt);
-
-                        if (passwordHash.SequenceEqual(existingLeak.PasswordHash))
+                        if (CryptoService.ArePasswordsEqual(existingLeak.PasswordCipher, record.PlaintextPassword, CryptoService.DeriveKey(record.Email, CryptoService.TestSecret)))
                         {
                             leaksToUpdateIds.Add(existingLeak.Id);
                             foundMatchingLeak = true;
@@ -147,7 +144,6 @@ namespace CredentialLeakageMonitoring.API.Services
                 byte[] passwordCipher = CryptoService.EncryptPassword(record.PlaintextPassword, key);
                 string domainName = emailInfos[record.Email].Domain;
                 Domain? domain = domains.SingleOrDefault(d => d.DomainName == domainName);
-                byte[] passwordCipher = CryptoService.EncryptPassword(record.PlaintextPassword, key);
 
                 List<Customer> customers = domain?.AssociatedByCustomers ?? [];
 
