@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using Konscious.Security.Cryptography;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace CredentialLeakageMonitoring.API.Services
@@ -17,7 +18,7 @@ namespace CredentialLeakageMonitoring.API.Services
         {
             email = email.Trim().ToLowerInvariant();
             byte[] inputBytes = Encoding.UTF8.GetBytes(email);
-            byte[] hash = SHA512.HashData(inputBytes);
+            byte[] hash = SHA384.HashData(inputBytes);
             return hash;
         }
 
@@ -27,15 +28,16 @@ namespace CredentialLeakageMonitoring.API.Services
         public static byte[] HashPassword(string password, byte[] salt)
         {
             byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
-            byte[] saltedPassword = new byte[salt.Length + passwordBytes.Length];
 
-            // Combine Salt + Passwort (salt first)
-            Buffer.BlockCopy(salt, 0, saltedPassword, 0, salt.Length);
-            Buffer.BlockCopy(passwordBytes, 0, saltedPassword, salt.Length, passwordBytes.Length);
+            var argon2 = new Argon2id(passwordBytes)
+            {
+                Salt = salt,
+                Iterations = 1,            
+                MemorySize = 8 * 1024,     
+                DegreeOfParallelism = 1  
+            };
 
-            byte[] hash = SHA512.HashData(saltedPassword);
-
-            return hash;
+            return argon2.GetBytes(64);
         }
 
         /// <summary>
