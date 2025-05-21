@@ -18,7 +18,7 @@ namespace CredentialLeakageMonitoring.API.Services
     /// </remarks>
     public class IngestionService(IDbContextFactory<ApplicationDbContext> dbContextFactory, ILogger<IngestionService> log)
     {
-        private const int MaxChunks = 30;
+        private const int MaxChunks = 14;
 
         /// <summary>
         /// Ingests leaks from a CSV stream in batches.
