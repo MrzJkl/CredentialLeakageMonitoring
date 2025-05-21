@@ -95,10 +95,15 @@ namespace CredentialLeakageMonitoring.API.Services
             sw.Restart();
 #endif
             // Load all existing leaks and domains for the chunk in advance.
-            List<Leak> existingAccounts = await dbContext.Leaks
+            List<Leak> leaks = await dbContext.Leaks
                 .AsNoTracking()
                 .Where(l => emailHashes.Contains(l.EmailHash))
                 .ToListAsync();
+
+            // Group leaks by email hash for faster lookup.
+            Dictionary<byte[], List<Leak>> leakLookup = leaks
+                .GroupBy(l => l.EmailHash, new FastByteArrayComparer())
+                .ToDictionary(g => g.Key, g => g.ToList(), new FastByteArrayComparer());
 
             List<Domain> domains = await dbContext.Domains
                 .AsNoTracking()
@@ -117,12 +122,10 @@ namespace CredentialLeakageMonitoring.API.Services
             foreach (IngestionLeakModel record in chunk)
             {
                 byte[] emailHash = emailInfos[record.Email].Hash;
-                List<Leak> leaksForEmail = existingAccounts
-                    .Where(l => l.EmailHash.SequenceEqual(emailHash))
-                    .ToList();
+                bool foundLeaks = leakLookup.TryGetValue(emailHash, out List<Leak>? leaksForEmail);
                 bool foundMatchingLeak = false;
 
-                if (leaksForEmail.Count != 0)
+                if (foundLeaks && leaksForEmail!.Count != 0)
                 {
 
                     foreach (Leak? existingLeak in leaksForEmail)
