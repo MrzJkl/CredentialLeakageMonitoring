@@ -11,9 +11,6 @@ namespace CredentialLeakageMonitoring.API.ApiModels
         public string EmailHash { get; init; } = string.Empty;
 
         [Required]
-        public string ObfuscatedPassword { get; init; } = string.Empty;
-
-        [Required]
         public DateTimeOffset FirstSeen { get; init; }
 
         [Required]

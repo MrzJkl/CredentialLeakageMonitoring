@@ -12,7 +12,7 @@ namespace CredentialLeakageMonitoring.API.Services
     /// </remarks>
     /// <param name="dbContextFactory">The factory to create database contexts.</param>
     /// <param name="cryptoService">The service for hashing emails.</param>
-    public class QueryService(IDbContextFactory<ApplicationDbContext> dbContextFactory, CryptoService cryptoService)
+    public class QueryService(IDbContextFactory<ApplicationDbContext> dbContextFactory)
     {
         /// <summary>
         /// Searches for leaks by the specified email address.
@@ -22,7 +22,7 @@ namespace CredentialLeakageMonitoring.API.Services
         public async Task<List<LeakModel>> SearchForLeaksByEmail(string eMail)
         {
             using ApplicationDbContext dbContext = await dbContextFactory.CreateDbContextAsync();
-            byte[] emailHash = cryptoService.HashEmail(eMail);
+            byte[] emailHash = CryptoService.HashEmail(eMail);
 
             // Query leaks matching the hashed email.
             List<LeakModel> leaks = await dbContext.Leaks
@@ -32,7 +32,6 @@ namespace CredentialLeakageMonitoring.API.Services
                 {
                     Id = l.Id,
                     EmailHash = Convert.ToBase64String(l.EmailHash),
-                    ObfuscatedPassword = l.ObfuscatedPassword,
                     FirstSeen = l.FirstSeen,
                     LastSeen = l.LastSeen,
                     Domain = l.Domain,
@@ -110,7 +109,6 @@ namespace CredentialLeakageMonitoring.API.Services
                 {
                     Id = l.Id,
                     EmailHash = Convert.ToBase64String(l.EmailHash),
-                    ObfuscatedPassword = l.ObfuscatedPassword,
                     FirstSeen = l.FirstSeen,
                     LastSeen = l.LastSeen,
                     Domain = l.Domain,
