@@ -28,7 +28,7 @@ namespace CredentialLeakageMonitoring.API.Services
         public async Task IngestCsvAsync(Stream csvStream)
         {
             Stopwatch sw = Stopwatch.StartNew();
-            List<IngestionLeakModel> records = new();
+            List<IngestionLeakModel> records = [];
 
             // Read all records from the CSV stream.
             using StreamReader reader = new(csvStream);
@@ -44,9 +44,7 @@ namespace CredentialLeakageMonitoring.API.Services
                 records.Add(record);
             }
 
-            records = records
-                .Distinct()
-                .ToList();
+            records = [.. records.Distinct()];
 
             int chunkSize = records.Count / MaxChunks;
 

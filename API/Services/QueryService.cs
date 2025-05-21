@@ -63,7 +63,7 @@ namespace CredentialLeakageMonitoring.API.Services
                 .Include(c => c.AssociatedDomains)
                 .SingleOrDefaultAsync(c => c.Id == customerId)
                 .ConfigureAwait(false) ?? throw new KeyNotFoundException($"Customer with ID {customerId} not found.");
-            List<string> domainNames = customer.AssociatedDomains.Select(d => d.DomainName).ToList();
+            List<string> domainNames = [.. customer.AssociatedDomains.Select(d => d.DomainName)];
 
             // Find leaks for the customer's domains.
             var leaks = await dbContext.Leaks
@@ -80,10 +80,9 @@ namespace CredentialLeakageMonitoring.API.Services
                 .ConfigureAwait(false);
 
             // Associate customer with leaks if not already linked.
-            List<DatabaseModels.Leak> leaksToAssociate = leaks
+            List<DatabaseModels.Leak> leaksToAssociate = [.. leaks
                 .Where(x => !x.AlreadyAssociated)
-                .Select(x => x.Leak)
-                .ToList();
+                .Select(x => x.Leak)];
 
             if (leaksToAssociate.Count != 0)
             {

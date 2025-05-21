@@ -28,19 +28,18 @@ namespace CredentialLeakageMonitoring.API.Services
                 .Where(d => model.AssociatedDomains.Contains(d.DomainName))
                 .ToListAsync();
 
-            HashSet<string> existingDomainNames = existingDomains.Select(d => d.DomainName).ToHashSet();
+            HashSet<string> existingDomainNames = [.. existingDomains.Select(d => d.DomainName)];
 
             // Prepare new domains that do not exist yet.
-            List<Domain> newDomains = model.AssociatedDomains
+            List<Domain> newDomains = [.. model.AssociatedDomains
                 .Where(dn => !existingDomainNames.Contains(dn))
-                .Select(dn => new Domain { DomainName = dn })
-                .ToList();
+                .Select(dn => new Domain { DomainName = dn })];
 
             dbContext.Domains.AddRange(newDomains);
             await dbContext.SaveChangesAsync();
 
             // Combine all domains for association.
-            List<Domain> allDomains = existingDomains.Concat(newDomains).ToList();
+            List<Domain> allDomains = [.. existingDomains, .. newDomains];
 
             Customer customer = new()
             {
@@ -127,24 +126,23 @@ namespace CredentialLeakageMonitoring.API.Services
 
             customer.Name = customerModel.Name;
 
-            List<string> domainNames = customerModel.AssociatedDomains.ToList();
+            List<string> domainNames = [.. customerModel.AssociatedDomains];
 
             // Find and add new domains if necessary.
             List<Domain> existingDomains = await dbContext.Domains
                 .Where(d => domainNames.Contains(d.DomainName))
                 .ToListAsync();
 
-            HashSet<string> existingDomainNames = existingDomains.Select(d => d.DomainName).ToHashSet();
+            HashSet<string> existingDomainNames = [.. existingDomains.Select(d => d.DomainName)];
 
-            List<Domain> newDomains = domainNames
+            List<Domain> newDomains = [.. domainNames
                 .Where(dn => !existingDomainNames.Contains(dn))
-                .Select(dn => new Domain { DomainName = dn })
-                .ToList();
+                .Select(dn => new Domain { DomainName = dn })];
 
             dbContext.Domains.AddRange(newDomains);
             await dbContext.SaveChangesAsync();
 
-            List<Domain> allDomains = existingDomains.Concat(newDomains).ToList();
+            List<Domain> allDomains = [.. existingDomains, .. newDomains];
 
             customer.AssociatedDomains = allDomains;
 
