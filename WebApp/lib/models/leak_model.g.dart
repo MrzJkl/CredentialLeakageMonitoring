@@ -23,8 +23,8 @@ Map<String, dynamic> _$LeakModelToJson(LeakModel instance) => <String, dynamic>{
   'associatedCustomers': instance.associatedCustomers,
   'domain': instance.domain,
   'emailHash': instance.emailHash,
-  'passwordHash': instance.passwordHash,
   'firstSeen': instance.firstSeen.toIso8601String(),
   'id': instance.id,
   'lastSeen': instance.lastSeen.toIso8601String(),
+  'passwordHash': instance.passwordHash,
 };

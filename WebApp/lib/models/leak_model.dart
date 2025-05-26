@@ -21,11 +21,10 @@ class LeakModel {
   final List<CustomerModel> associatedCustomers;
   final String domain;
   final String emailHash;
-
-  final String passwordHash;
   final DateTime firstSeen;
   final String id;
   final DateTime lastSeen;
+  final String passwordHash;
 
   Map<String, dynamic> toJson() => _$LeakModelToJson(this);
 }

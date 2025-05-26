@@ -5,11 +5,11 @@ import 'package:credential_leakage_monitoring/models/customer_model.dart';
 import 'package:credential_leakage_monitoring/models/leak_model.dart';
 
 class ApiService {
-  static const String apiBaseUrl = String.fromEnvironment('API_URL');
-
   factory ApiService() => _instance;
 
   ApiService._internal();
+
+  static const String apiBaseUrl = String.fromEnvironment('API_URL');
 
   static final ApiService _instance = ApiService._internal();
 
