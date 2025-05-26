@@ -61,7 +61,7 @@ class LeakPaginatedTable extends StatelessWidget {
         header: Text('Number of Leaks: ${leaks.length}'),
         columns: const [
           DataColumn(label: Text('E-Mail Hash')),
-          DataColumn(label: Text('Obf. Password')),
+          DataColumn(label: Text('Password Hash')),
           DataColumn(label: Text('Domain')),
           DataColumn(label: Text('First Seen')),
           DataColumn(label: Text('Last Seen')),
@@ -86,9 +86,9 @@ class LeakDataSource extends DataTableSource {
     return DataRow.byIndex(
       index: index,
       cells: [
-        DataCell(Text(leak.emailHash ?? '')),
-        DataCell(Text(leak.obfuscatedPassword ?? '')),
-        DataCell(Text(leak.domain ?? '')),
+        DataCell(Text(leak.emailHash)),
+        DataCell(Text(leak.passwordHash)),
+        DataCell(Text(leak.domain)),
         DataCell(Text(leak.firstSeen.toString())),
         DataCell(Text(leak.lastSeen.toString())),
       ],

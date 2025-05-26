@@ -32,6 +32,7 @@ namespace CredentialLeakageMonitoring.API.Services
                 {
                     Id = l.Id,
                     EmailHash = Convert.ToBase64String(l.EmailHash),
+                    PasswordHash = Convert.ToBase64String(l.PasswordHash),
                     FirstSeen = l.FirstSeen,
                     LastSeen = l.LastSeen,
                     Domain = l.Domain,
@@ -108,6 +109,7 @@ namespace CredentialLeakageMonitoring.API.Services
                 {
                     Id = l.Id,
                     EmailHash = Convert.ToBase64String(l.EmailHash),
+                    PasswordHash = Convert.ToBase64String(l.PasswordHash),
                     FirstSeen = l.FirstSeen,
                     LastSeen = l.LastSeen,
                     Domain = l.Domain,

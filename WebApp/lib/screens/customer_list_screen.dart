@@ -31,7 +31,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: Text(isEdit ? 'Kunde bearbeiten' : 'Kunde erstellen'),
+            title: Text(isEdit ? 'Edit customer' : 'Create customer'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -42,7 +42,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                 TextField(
                   controller: domainsController,
                   decoration: InputDecoration(
-                    labelText: 'Domains (Komma-getrennt)',
+                    labelText: 'Domains (comma-separated)',
                   ),
                 ),
               ],
@@ -50,7 +50,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Abbrechen'),
+                child: const Text('Cancel'),
               ),
               ElevatedButton(
                 onPressed: () async {
@@ -93,7 +93,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                   }
                   Navigator.pop(context);
                 },
-                child: Text(isEdit ? 'Speichern' : 'Erstellen'),
+                child: Text(isEdit ? 'Save' : 'Create'),
               ),
             ],
           ),
@@ -103,7 +103,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Kundenverwaltung')),
+      appBar: AppBar(title: const Text('Customer management')),
       body: FutureBuilder<List<CustomerModel>>(
         future: _customersFuture,
         builder: (context, snapshot) {
@@ -111,7 +111,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Fehler: ${snapshot.error}'));
+            return Center(child: Text('Error: ${snapshot.error}'));
           }
           final customers = snapshot.data!;
           return ListView.builder(
@@ -144,6 +144,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                     IconButton(
                       icon: const Icon(Icons.edit),
                       onPressed: () => showCustomerDialog(customer: customer),
+                      tooltip: 'Edit customer',
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete),
@@ -181,6 +182,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                               );
                         }
                       },
+                      tooltip: 'Delete customer',
                     ),
                   ],
                 ),

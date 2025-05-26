@@ -55,7 +55,7 @@ class _QueryScreenState extends State<QueryScreen> {
 
     return DataTable(
       columns: const [
-        DataColumn(label: Text('Password')),
+        DataColumn(label: Text('Password-Hash')),
         DataColumn(label: Text('First Seen')),
         DataColumn(label: Text('Last Seen')),
       ],
@@ -63,7 +63,7 @@ class _QueryScreenState extends State<QueryScreen> {
           _leaks.map((leak) {
             return DataRow(
               cells: [
-                DataCell(Text(leak.obfuscatedPassword)),
+                DataCell(Text(leak.passwordHash)),
                 DataCell(Text(DateFormat('dd.MM.yyyy').format(leak.firstSeen))),
                 DataCell(Text(DateFormat('dd.MM.yyyy').format(leak.lastSeen))),
               ],
